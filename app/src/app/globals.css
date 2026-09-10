@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F4F6F2;
+  --surface: #FFFFFF;
+  --surface-inset: #E9ECE4;
+  --border: #D3D8CA;
+
+  --foreground: #171B12;
+  --muted-foreground: #565B4D;
+
+  --accent: #2F5D3A;
+  --accent-foreground: #FFFFFF;
+  --accent-strong: #234529;
+
+  --band-green: #2F7A4F;
+  --band-yellow: #B0791A;
+  --band-red: #A33A2E;
+
+  --severity-low: #3C7A62;
+  --severity-medium: #B0791A;
+  --severity-high: #C4531F;
+  --severity-critical: #A33A2E;
+
+  --radius: 4px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-inset: var(--surface-inset);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-strong: var(--accent-strong);
+  --color-band-green: var(--band-green);
+  --color-band-yellow: var(--band-yellow);
+  --color-band-red: var(--band-red);
+  --color-severity-low: var(--severity-low);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-high: var(--severity-high);
+  --color-severity-critical: var(--severity-critical);
+  --font-sans: var(--font-public-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+  --radius-DEFAULT: var(--radius);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #14170F;
+    --surface: #1B1F16;
+    --surface-inset: #23281B;
+    --border: #333A27;
+    --foreground: #EDF0E6;
+    --muted-foreground: #A2A891;
+    --accent: #5C9C6D;
+    --accent-foreground: #0E140F;
+    --accent-strong: #7BB98B;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #14170F;
+  --surface: #1B1F16;
+  --surface-inset: #23281B;
+  --border: #333A27;
+  --foreground: #EDF0E6;
+  --muted-foreground: #A2A891;
+  --accent: #5C9C6D;
+  --accent-foreground: #0E140F;
+  --accent-strong: #7BB98B;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.leaflet-container {
+  background: var(--surface-inset) !important;
+  font-family: var(--font-sans) !important;
+}

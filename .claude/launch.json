@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sih-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "app"],
+      "port": 3000
+    },
+    {
+      "name": "sih-api",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--reload",
+        "--reload-dir",
+        "backend/app",
+        "--port",
+        "8000",
+        "--app-dir",
+        "backend"
+      ],
+      "port": 8000
+    }
+  ]
+}
