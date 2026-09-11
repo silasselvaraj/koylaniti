@@ -14,7 +14,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Coal Mine Compliance Monitor",
+  title: "KoylaNiti",
   description: "SIH26024 - AI-Based Smart Governance and Compliance Monitoring System for Coal Mines",
 };
 

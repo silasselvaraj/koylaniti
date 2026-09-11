@@ -12,13 +12,12 @@ def scope_mines(user: User, stmt: Select) -> Select:
     if user.role == "MINE_MANAGER":
         return stmt.where(Mine.id == user.mine_id)
     if user.role == "FIELD_INSPECTOR":
-        return stmt.where(
-            Mine.id.in_(
-                Case.__table__.select().with_only_columns(Case.mine_id).where(
-                    Case.assigned_to_user_id == user.id
-                )
-            )
-        )
+        # Unrestricted read-only mine visibility (same as MINISTRY_ADMIN) - a field
+        # inspector needs to be able to pick a mine when filing a standalone report
+        # that isn't tied to an existing case assignment. Read-only visibility of mine
+        # names/scores is a reasonable real-world permission for a field inspector;
+        # actual mutating actions (inspections, case access) stay scoped elsewhere.
+        return stmt
     return stmt.where(False)
 
 

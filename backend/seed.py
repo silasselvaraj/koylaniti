@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 from app.auth import hash_password
 from app.database import Base, SessionLocal, engine
 from app.id_generator import next_id
-from app.models import Case, ComplianceFinding, Document, Inspection, Mine, Rule, User
+from app.models import Case, ComplianceFinding, Contractor, Document, Inspection, Mine, Rule, User
 from app.satellite.mock_data import MOCK_SATELLITE_FINDINGS
 from app.scoring.config import SEVERITY_POINTS
 from app.scoring.engine import compute_mine_score
@@ -44,8 +44,10 @@ RULES = [
     dict(id="CMR-STAT-004", domain="STATUTORY", source="Water/Air Act - SPCB Consent to Operate",
          description="Consent to Operate must not be expired.", check_type="DATE",
          threshold={"grace_days": 0}, severity="MEDIUM", evidence_required="Document"),
-    dict(id="CMR-SAFE-001", domain="SAFETY", source="Mines Act 1952 S.19 / CMR 2017",
-         description="Statutory safety inspection must not be overdue.", check_type="INSPECTION",
+    dict(id="CMR-SAFE-001", domain="SAFETY", source="CMR 2017 Regulation 106(2)/(3)",
+         description="Statutory safety inspection is tracked against this KoylaNiti control's own check "
+                      "parameters (a configurable days-since-last-inspection threshold, not a cadence quoted "
+                      "from the regulation itself).", check_type="INSPECTION",
          threshold={"max_days_since_inspection": 90}, severity="HIGH", evidence_required="Inspection"),
     dict(id="CMR-SAFE-002", domain="SAFETY", source="CMR 2017 Reg 108 (ventilation)",
          description="Ventilation / gas monitoring checklist item must pass.", check_type="BOOLEAN",
@@ -128,11 +130,28 @@ db.commit()
 print(f"Seeded {len(users_to_create)} users (all password: {DEMO_PASSWORD}).")
 
 # ---------------------------------------------------------------------------
+# Contractors (kept deliberately lightweight - a governance relationship, not an ERP)
+# ---------------------------------------------------------------------------
+
+CONTRACTORS = [
+    dict(id="CONTR-1001", name="Bharat Mine Safety Services", contact_person="V. Krishnan", phone="+91-98765-43210",
+         license_number="DGMS-CTR-2021-0447", specialization="Ventilation & gas monitoring"),
+    dict(id="CONTR-1002", name="Coalfield Earthworks Pvt Ltd", contact_person="R. Menon", phone="+91-98765-11223",
+         license_number="DGMS-CTR-2019-0182", specialization="Overburden removal & reclamation"),
+    dict(id="CONTR-1003", name="Eastern Zone Fire & Safety Co.", contact_person="A. Dutta", phone="+91-98765-99887",
+         license_number="DGMS-CTR-2022-0930", specialization="Emergency equipment maintenance"),
+]
+for c in CONTRACTORS:
+    db.add(Contractor(**c))
+db.commit()
+print(f"Seeded {len(CONTRACTORS)} contractors.")
+
+# ---------------------------------------------------------------------------
 # Helper to add a finding
 # ---------------------------------------------------------------------------
 
 
-def add_finding(mine_id, rule_id, source_type, description, source_id=None, detail=None):
+def add_finding(mine_id, rule_id, source_type, description, source_id=None, detail=None, contractor_id=None):
     rule = db.get(Rule, rule_id)
     db.add(
         ComplianceFinding(
@@ -146,6 +165,7 @@ def add_finding(mine_id, rule_id, source_type, description, source_id=None, deta
             status="OPEN",
             description=description,
             score_impact=SEVERITY_POINTS[rule.severity],
+            contractor_id=contractor_id,
         )
     )
 
@@ -189,12 +209,12 @@ add_finding(
 add_finding(
     "MINE-1003", "CMR-SAFE-001", "INSPECTION",
     "Statutory safety inspection overdue by 34 days (last inspection >90 days ago).",
-    detail={"days_overdue": 34},
+    detail={"days_overdue": 34}, contractor_id="CONTR-1003",
 )
 add_finding(
     "MINE-1003", "CMR-SAFE-002", "INSPECTION",
     "Ventilation/gas monitoring checklist item failed at last recorded inspection.",
-    detail={"checklist_item": "ventilation_gas_monitoring", "passed": False},
+    detail={"checklist_item": "ventilation_gas_monitoring", "passed": False}, contractor_id="CONTR-1001",
 )
 
 hero_sat = next(f for f in MOCK_SATELLITE_FINDINGS if f["mine_id"] == "MINE-1003")

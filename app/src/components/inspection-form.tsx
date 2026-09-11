@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { createInspectionAction, syncBatchAction } from "@/lib/actions";
 import { enqueue, readQueue, clearQueue, type QueuedInspection } from "@/lib/offline-queue";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Mine } from "@/lib/api";
 
 const CHECKLIST_ITEMS = [
   { item_id: "ventilation_gas_monitoring", label: "Ventilation / gas monitoring functioning" },
@@ -14,6 +15,8 @@ const CHECKLIST_ITEMS = [
   { item_id: "ppe_compliance", label: "Workers wearing required PPE" },
   { item_id: "signage_barricading", label: "Safety signage and barricading in place" },
 ];
+
+const REPORT_TYPES = ["Compliance Observation", "Safety Incident", "Environmental Observation", "Operational Exception"];
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -24,11 +27,21 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function InspectionForm({ mineId, caseId }: { mineId: string; caseId: string }) {
+export function InspectionForm({
+  mineId,
+  caseId,
+  mines,
+}: {
+  mineId: string | null;
+  caseId: string | null;
+  mines?: Mine[];
+}) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, { passed: boolean; notes: string }>>(
     Object.fromEntries(CHECKLIST_ITEMS.map((i) => [i.item_id, { passed: true, notes: "" }]))
   );
+  const [reportType, setReportType] = useState(REPORT_TYPES[0]);
+  const [selectedMineId, setSelectedMineId] = useState(mines?.[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -59,6 +72,11 @@ export function InspectionForm({ mineId, caseId }: { mineId: string; caseId: str
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const effectiveMineId = mineId ?? selectedMineId;
+    if (!effectiveMineId) {
+      setMessage("Select a mine.");
+      return;
+    }
     setSubmitting(true);
     setMessage(null);
 
@@ -71,8 +89,9 @@ export function InspectionForm({ mineId, caseId }: { mineId: string; caseId: str
 
     const payload: QueuedInspection = {
       client_id: crypto.randomUUID(),
-      mine_id: mineId,
+      mine_id: effectiveMineId,
       case_id: caseId,
+      report_type: reportType,
       checklist_answers: CHECKLIST_ITEMS.map((i) => ({
         item_id: i.item_id,
         label: i.label,
@@ -137,6 +156,39 @@ export function InspectionForm({ mineId, caseId }: { mineId: string; caseId: str
       </Card>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Report details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="report_type">Field report type</Label>
+              <Select id="report_type" value={reportType} onChange={(e) => setReportType(e.target.value)}>
+                {REPORT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            {mineId === null && (
+              <div className="space-y-1">
+                <Label htmlFor="mine_id">Mine</Label>
+                <Select id="mine_id" value={selectedMineId} onChange={(e) => setSelectedMineId(e.target.value)} required>
+                  <option value="" disabled>
+                    Select a mine
+                  </option>
+                  {(mines ?? []).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Checklist</CardTitle>

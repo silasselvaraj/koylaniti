@@ -11,7 +11,15 @@ export default async function InspectorHome() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold">My assignments</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">My assignments</h1>
+        <Link
+          href="/inspector/report/new"
+          className="inline-flex h-9 items-center justify-center rounded bg-accent px-3 text-sm font-medium text-accent-foreground hover:bg-accent-strong"
+        >
+          File a report
+        </Link>
+      </div>
 
       <Card>
         <CardContent className="divide-y divide-border p-0">

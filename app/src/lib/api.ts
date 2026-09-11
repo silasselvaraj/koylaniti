@@ -68,6 +68,7 @@ export interface Finding {
   score_impact: number;
   detail: Record<string, unknown>;
   case_id: string | null;
+  contractor_id: string | null;
   detected_at: string;
 }
 
@@ -91,6 +92,7 @@ export interface Inspection {
   mine_id: string;
   inspector_user_id: number;
   case_id: string | null;
+  report_type: string;
   checklist_answers: { item_id: string; label: string; passed: boolean; notes: string }[];
   gps_lat: number | null;
   gps_lng: number | null;
@@ -113,6 +115,9 @@ export interface Case {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  due_date: string | null;
+  escalation_target: string | null;
+  is_overdue: boolean;
 }
 
 export interface UserRow {
@@ -139,6 +144,36 @@ export interface Me {
   full_name: string;
   jurisdiction_state: string | null;
   mine_id: string | null;
+}
+
+export interface Rule {
+  id: string;
+  domain: string;
+  source: string;
+  description: string;
+  severity: string;
+  evidence_required: string;
+  check_type: string;
+}
+
+export interface AuditLogRow {
+  id: number;
+  event_type: string;
+  mine_id: string | null;
+  case_id: string | null;
+  user_id: number | null;
+  detail: string | null;
+  created_at: string;
+}
+
+export interface Contractor {
+  id: string;
+  name: string;
+  contact_person: string | null;
+  phone: string | null;
+  license_number: string | null;
+  specialization: string | null;
+  created_at: string;
 }
 
 export interface SatelliteFinding {
@@ -185,6 +220,19 @@ export const getCases = (params?: { status?: string; severity?: string; mine_id?
 export const getCase = (caseId: string) => apiFetch<Case>(`/api/v1/cases/${caseId}`);
 
 export const getCaseInspections = (caseId: string) => apiFetch<Inspection[]>(`/api/v1/inspections?case_id=${caseId}`);
+
+export const getStandaloneInspections = () => apiFetch<Inspection[]>(`/api/v1/inspections?standalone=true`);
+
+export const getCaseAudit = (caseId: string) => apiFetch<AuditLogRow[]>(`/api/v1/cases/${caseId}/audit`);
+
+export const getRules = (domain?: string) => apiFetch<Rule[]>(`/api/v1/rules${domain ? `?domain=${domain}` : ""}`);
+
+export const getContractors = () => apiFetch<Contractor[]>(`/api/v1/contractors`);
+
+export const getContractor = (contractorId: string) =>
+  apiFetch<{ contractor: Contractor; findings: Finding[]; open_case_ids: string[] }>(
+    `/api/v1/contractors/${contractorId}`
+  );
 
 export const getUsers = (params?: { role?: string }) => {
   const q = new URLSearchParams(params as Record<string, string>).toString();

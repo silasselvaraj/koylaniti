@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
-import { ApiError, getCase, getCaseInspections, getMine, getMineFindings, getUsers } from "@/lib/api";
+import { ApiError, getCase, getCaseAudit, getCaseInspections, getMine, getMineFindings, getRules, getUsers } from "@/lib/api";
 import { assignCaseAction, resolveCaseAction, verifyCaseAction } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
+import { CaseStatusBadge, OverdueBadge, SeverityBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label, Select, Textarea } from "@/components/ui/input";
+import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { RiskPanel } from "@/components/risk-panel";
+import { EvidenceGraph } from "@/components/evidence-graph";
+import { formatRuleId } from "@/lib/format";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ caseId: string }> }) {
   const { caseId } = await params;
@@ -17,13 +20,18 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
     throw e;
   }
 
-  const [mine, findings, inspections] = await Promise.all([
+  const [mine, findings, inspections, rules, auditRows, allUsers] = await Promise.all([
     getMine(caseRow.mine_id),
     getMineFindings(caseRow.mine_id),
     getCaseInspections(caseId),
+    getRules(),
+    getCaseAudit(caseId),
+    getUsers(),
   ]);
   const linkedFindings = findings.filter((f) => f.case_id === caseId);
-  const inspectors = caseRow.status === "DETECTED" || caseRow.status === "TRIAGED" ? await getUsers({ role: "FIELD_INSPECTOR" }) : [];
+  const inspectors = allUsers.filter((u) => u.role === "FIELD_INSPECTOR");
+  const ruleById = Object.fromEntries(rules.map((r) => [r.id, r]));
+  const userNameById = Object.fromEntries(allUsers.map((u) => [u.id, u.full_name]));
 
   return (
     <div className="space-y-6">
@@ -35,6 +43,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <OverdueBadge isOverdue={caseRow.is_overdue} />
           <SeverityBadge severity={caseRow.severity} />
           <CaseStatusBadge status={caseRow.status} />
         </div>
@@ -49,6 +58,17 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
         </Card>
       )}
 
+      <RiskPanel findings={linkedFindings} />
+
+      <EvidenceGraph
+        caseRow={caseRow}
+        linkedFindings={linkedFindings}
+        ruleById={ruleById}
+        inspections={inspections}
+        auditRows={auditRows}
+        userNameById={userNameById}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Linked findings ({linkedFindings.length})</CardTitle>
@@ -59,7 +79,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
               <div>
                 <div className="text-sm">{f.description}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {f.rule_id ?? "—"} &middot; {f.source_type}
+                  {formatRuleId(f.rule_id)} &middot; {f.source_type}
                 </div>
               </div>
               <SeverityBadge severity={f.severity} />
@@ -114,19 +134,31 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
         </CardHeader>
         <CardContent>
           {(caseRow.status === "DETECTED" || caseRow.status === "TRIAGED") && (
-            <form action={assignCaseAction.bind(null, caseId)} className="flex items-end gap-3">
-              <div className="flex-1 space-y-1">
-                <Label htmlFor="user_id">Assign to inspector</Label>
-                <Select id="user_id" name="user_id" required defaultValue="">
-                  <option value="" disabled>
-                    Select an inspector
-                  </option>
-                  {inspectors.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name}
+            <form action={assignCaseAction.bind(null, caseId)} className="space-y-3">
+              <div className="flex items-end gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="user_id">Assign to inspector</Label>
+                  <Select id="user_id" name="user_id" required defaultValue="">
+                    <option value="" disabled>
+                      Select an inspector
                     </option>
-                  ))}
-                </Select>
+                    {inspectors.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="due_date">Due date (SLA)</Label>
+                  <Input id="due_date" name="due_date" type="date" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="escalation_target">Escalation target</Label>
+                  <Input id="escalation_target" name="escalation_target" placeholder="e.g. State DGMS Office" />
+                </div>
               </div>
               <Button type="submit">Assign case</Button>
             </form>
@@ -135,6 +167,8 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
           {(caseRow.status === "ASSIGNED" || caseRow.status === "INSPECTION_REMEDIATION") && (
             <p className="text-sm text-muted-foreground">
               Waiting for the assigned inspector to submit checklist evidence.
+              {caseRow.due_date && ` Due ${new Date(caseRow.due_date).toLocaleDateString()}.`}
+              {caseRow.escalation_target && ` Escalation: ${caseRow.escalation_target}.`}
             </p>
           )}
 

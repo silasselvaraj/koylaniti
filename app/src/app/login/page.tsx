@@ -13,7 +13,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded border border-border bg-surface p-6">
-        <h1 className="font-mono text-sm font-semibold tracking-tight mb-1">COAL COMPLIANCE MONITOR</h1>
+        <h1 className="font-mono text-sm font-semibold tracking-tight mb-1">KOYLANITI</h1>
         <p className="text-sm text-muted-foreground mb-6">SIH26024 &mdash; Smart Governance &amp; Compliance Monitoring</p>
         <form action={formAction} className="space-y-4">
           <div className="space-y-1">

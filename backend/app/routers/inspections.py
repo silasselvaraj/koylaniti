@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.audit import log_event
 from app.database import get_db
-from app.deps import require_field_inspector, require_user
+from app.deps import require_dgms_officer, require_field_inspector, require_user
 from app.id_generator import next_id
 from app.models import Case, Inspection, User
 from app.routers.cases import transition
@@ -36,6 +36,7 @@ def _create_or_get(db: Session, body: InspectionIn, user: User) -> Inspection:
         mine_id=body.mine_id,
         inspector_user_id=user.id,
         case_id=body.case_id,
+        report_type=body.report_type,
         checklist_answers=body.checklist_answers,
         gps_lat=body.gps_lat,
         gps_lng=body.gps_lng,
@@ -90,6 +91,7 @@ def get_inspection(inspection_id: str, db: Session = Depends(get_db), user: User
 def list_inspections(
     mine_id: str | None = None,
     case_id: str | None = None,
+    standalone: bool | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(require_user),
 ):
@@ -98,4 +100,19 @@ def list_inspections(
         stmt = stmt.where(Inspection.mine_id == mine_id)
     if case_id:
         stmt = stmt.where(Inspection.case_id == case_id)
+    if standalone:
+        stmt = stmt.where(Inspection.case_id.is_(None))
     return db.scalars(stmt.order_by(Inspection.created_at.desc())).all()
+
+
+@router.post("/inspections/{inspection_id}/review")
+def review_inspection(
+    inspection_id: str, db: Session = Depends(get_db), user: User = Depends(require_dgms_officer)
+):
+    stmt = scope_by_mine_fk(user, Inspection, select(Inspection).where(Inspection.id == inspection_id))
+    inspection = db.scalars(stmt).first()
+    if inspection is None:
+        raise HTTPException(404, "Inspection not found")
+    log_event(db, "field_report_reviewed", mine_id=inspection.mine_id, user_id=user.id, detail=inspection_id)
+    db.commit()
+    return {"status": "reviewed"}

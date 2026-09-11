@@ -2,6 +2,7 @@ export interface QueuedInspection {
   client_id: string;
   mine_id: string;
   case_id: string | null;
+  report_type: string;
   checklist_answers: { item_id: string; label: string; passed: boolean; notes: string }[];
   gps_lat: number | null;
   gps_lng: number | null;

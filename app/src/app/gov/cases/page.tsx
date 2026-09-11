@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCases, getMines } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
-import { CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
+import { CaseStatusBadge, OverdueBadge, SeverityBadge, caseStatusLabel } from "@/components/ui/badge";
 
 export default async function CasesPage({
   searchParams,
@@ -28,7 +28,7 @@ export default async function CasesPage({
               href={`/gov/cases?status=${s}`}
               className={`rounded px-2 py-1 ${status === s ? "bg-accent text-accent-foreground" : "bg-surface-inset"}`}
             >
-              {s.replace(/_/g, " ")}
+              {caseStatusLabel(s)}
             </Link>
           ))}
         </div>
@@ -48,6 +48,7 @@ export default async function CasesPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <OverdueBadge isOverdue={c.is_overdue} />
                   <SeverityBadge severity={c.severity} />
                   <CaseStatusBadge status={c.status} />
                 </div>

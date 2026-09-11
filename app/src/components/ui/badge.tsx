@@ -45,6 +45,19 @@ const STATUS_STYLE: Record<string, string> = {
   CLOSED: "bg-[var(--band-green)] text-white border-transparent",
 };
 
+export const CASE_STATUS_LABEL: Record<string, string> = {
+  EVIDENCE_SUBMITTED: "VERIFICATION PENDING",
+};
+
+export function caseStatusLabel(status: string): string {
+  return CASE_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
+}
+
 export function CaseStatusBadge({ status }: { status: string }) {
-  return <Badge className={STATUS_STYLE[status] ?? ""}>{status.replace(/_/g, " ")}</Badge>;
+  return <Badge className={STATUS_STYLE[status] ?? ""}>{caseStatusLabel(status)}</Badge>;
+}
+
+export function OverdueBadge({ isOverdue }: { isOverdue: boolean }) {
+  if (!isOverdue) return null;
+  return <Badge className="bg-[var(--severity-critical)] text-white border-transparent">OVERDUE</Badge>;
 }

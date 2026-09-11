@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
@@ -8,10 +8,13 @@ from app.ai.case_brief import run_case_brief_generation
 from app.audit import log_event
 from app.database import get_db
 from app.deps import require_dgms_officer, require_mine_manager, require_user
-from app.models import Case, ComplianceFinding, Notification, User
-from app.schemas import CaseAssignIn, CaseOut, CaseResolveIn
+from app.models import AuditLog, Case, ComplianceFinding, Mine, Notification, User
+from app.notifications_helpers import notify_oversight
+from app.schemas import AuditLogOut, CaseAssignIn, CaseOut, CaseResolveIn
 from app.scoping import scope_by_mine_fk
 from app.scoring.engine import compute_mine_score
+
+NEAR_DUE_THRESHOLD = timedelta(hours=48)
 
 router = APIRouter(prefix="/api/v1/cases", tags=["cases"])
 
@@ -67,6 +70,13 @@ def get_case(case_id: str, db: Session = Depends(get_db), user: User = Depends(r
     return _get_visible_case(db, case_id, user)
 
 
+@router.get("/{case_id}/audit", response_model=list[AuditLogOut])
+def get_case_audit(case_id: str, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    _get_visible_case(db, case_id, user)  # visibility check
+    stmt = select(AuditLog).where(AuditLog.case_id == case_id).order_by(AuditLog.created_at)
+    return db.scalars(stmt).all()
+
+
 @router.post("/{case_id}/assign", response_model=CaseOut)
 def assign_case(
     case_id: str,
@@ -81,7 +91,16 @@ def assign_case(
         raise HTTPException(400, "Assignee must be a field inspector")
     transition(db, case, "ASSIGNED", user, detail=f"assigned_to={assignee.id}")
     case.assigned_to_user_id = assignee.id
+    case.due_date = body.due_date
+    case.escalation_target = body.escalation_target
     db.add(Notification(user_id=assignee.id, case_id=case.id, message=f"You were assigned case {case.id}"))
+    if body.due_date is not None:
+        due = body.due_date if body.due_date.tzinfo else body.due_date.replace(tzinfo=timezone.utc)
+        if due - datetime.now(timezone.utc) < NEAR_DUE_THRESHOLD:
+            mine = db.get(Mine, case.mine_id)
+            notify_oversight(
+                db, mine, f"Case {case.id} has a near/overdue SLA (due {due.date().isoformat()}).", case_id=case.id
+            )
     db.commit()
     if case.ai_brief is None:
         background_tasks.add_task(run_case_brief_generation, case.id)
@@ -105,7 +124,15 @@ def submit_evidence(
 def verify_case(case_id: str, db: Session = Depends(get_db), user: User = Depends(require_dgms_officer)):
     case = _get_visible_case(db, case_id, user)
     transition(db, case, "VERIFIED", user)
+    # Verification is the point where a DGMS officer confirms the submitted evidence
+    # actually addresses the findings - that's when they become RESOLVED, not later.
+    findings = db.scalars(
+        select(ComplianceFinding).where(ComplianceFinding.case_id == case_id, ComplianceFinding.status == "OPEN")
+    ).all()
+    for f in findings:
+        f.status = "RESOLVED"
     db.commit()
+    compute_mine_score(db, case.mine_id)
     return case
 
 
@@ -117,10 +144,16 @@ def resolve_case(
     user: User = Depends(require_dgms_officer),
 ):
     case = _get_visible_case(db, case_id, user)
+    open_findings = db.scalars(
+        select(ComplianceFinding).where(ComplianceFinding.case_id == case_id, ComplianceFinding.status == "OPEN")
+    ).all()
+    if open_findings:
+        raise HTTPException(
+            400, f"Cannot close case: {len(open_findings)} linked finding(s) still OPEN - verify evidence first."
+        )
     transition(db, case, "CLOSED", user, detail=body.reason)
-    findings = db.scalars(select(ComplianceFinding).where(ComplianceFinding.case_id == case_id, ComplianceFinding.status == "OPEN")).all()
-    for f in findings:
-        f.status = "RESOLVED"
     db.commit()
+    # A different, still-open finding on this mine (not linked to this case) may have
+    # kept it RED - give that finding's own case-creation path a chance to fire.
     compute_mine_score(db, case.mine_id)
     return case

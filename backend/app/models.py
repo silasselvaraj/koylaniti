@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary, func
+from sqlalchemy import JSON, DateTime, ForeignKey, LargeBinary, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -8,6 +8,7 @@ from app.database import Base
 ROLES = ("MINISTRY_ADMIN", "DGMS_OFFICER", "MINE_MANAGER", "FIELD_INSPECTOR")
 DOMAINS = ("STATUTORY", "SAFETY", "ENVIRONMENTAL", "OPERATIONAL")
 BANDS = ("GREEN", "YELLOW", "RED")
+REPORT_TYPES = ("Compliance Observation", "Safety Incident", "Environmental Observation", "Operational Exception")
 SEVERITIES = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
 CASE_STATUSES = (
     "DETECTED",
@@ -100,6 +101,7 @@ class Inspection(Base):
     mine_id: Mapped[str] = mapped_column(ForeignKey("mines.id", ondelete="CASCADE"))
     inspector_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     case_id: Mapped[str | None] = mapped_column(ForeignKey("cases.id"), default=None)
+    report_type: Mapped[str] = mapped_column(default="Compliance Observation")
     checklist_answers: Mapped[list] = mapped_column(JSON, default=list)
     gps_lat: Mapped[float | None] = mapped_column(default=None)
     gps_lng: Mapped[float | None] = mapped_column(default=None)
@@ -114,6 +116,18 @@ class Inspection(Base):
     @property
     def has_photo(self) -> bool:
         return self.photo_data is not None
+
+
+class Contractor(Base):
+    __tablename__ = "contractors"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    contact_person: Mapped[str | None] = mapped_column(default=None)
+    phone: Mapped[str | None] = mapped_column(default=None)
+    license_number: Mapped[str | None] = mapped_column(default=None)
+    specialization: Mapped[str | None] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
 class ComplianceFinding(Base):
@@ -131,6 +145,7 @@ class ComplianceFinding(Base):
     description: Mapped[str]
     score_impact: Mapped[float]
     case_id: Mapped[str | None] = mapped_column(ForeignKey("cases.id"), default=None)
+    contractor_id: Mapped[str | None] = mapped_column(ForeignKey("contractors.id"), default=None)
     detected_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -146,6 +161,8 @@ class Case(Base):
     assigned_to_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
     created_by: Mapped[str] = mapped_column(default="SYSTEM")
     verification_inspection_id: Mapped[str | None] = mapped_column(default=None)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    escalation_target: Mapped[str | None] = mapped_column(default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(default=None)

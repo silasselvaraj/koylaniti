@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getMines, getComplianceReport, getCases } from "@/lib/api";
 import { MineMapLoader } from "@/components/mine-map-loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BandBadge, CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
+import { BandBadge, CaseStatusBadge, OverdueBadge, SeverityBadge } from "@/components/ui/badge";
 
 export default async function GovDashboard() {
   const [mines, report, openCases] = await Promise.all([
@@ -60,6 +60,7 @@ export default async function GovDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <OverdueBadge isOverdue={c.is_overdue} />
                   <SeverityBadge severity={c.severity} />
                   <CaseStatusBadge status={c.status} />
                 </div>

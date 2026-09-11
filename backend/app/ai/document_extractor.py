@@ -73,7 +73,8 @@ def run_document_extraction(document_id: str) -> None:
     BackgroundTasks actually runs."""
     from app.audit import log_event
     from app.database import SessionLocal
-    from app.models import ComplianceFinding, Document, Rule
+    from app.models import ComplianceFinding, Document, Mine, Rule
+    from app.notifications_helpers import notify_oversight
     from app.scoring.config import SEVERITY_POINTS
     from app.scoring.engine import compute_mine_score
 
@@ -120,6 +121,11 @@ def run_document_extraction(document_id: str) -> None:
                         score_impact=SEVERITY_POINTS.get(rule.severity, 15),
                     )
                     db.add(finding)
+                    if rule.severity == "CRITICAL":
+                        mine = db.get(Mine, doc.mine_id)
+                        notify_oversight(
+                            db, mine, f"CRITICAL finding detected at {mine.name}: {finding.description}"
+                        )
         db.commit()
         compute_mine_score(db, doc.mine_id)
     finally:

@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 
 class LoginRequest(BaseModel):
@@ -51,7 +51,44 @@ class FindingOut(BaseModel):
     score_impact: float
     detail: dict
     case_id: str | None
+    contractor_id: str | None
     detected_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ContractorOut(BaseModel):
+    id: str
+    name: str
+    contact_person: str | None
+    phone: str | None
+    license_number: str | None
+    specialization: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RuleOut(BaseModel):
+    id: str
+    domain: str
+    source: str
+    description: str
+    severity: str
+    evidence_required: str
+    check_type: str
+
+    model_config = {"from_attributes": True}
+
+
+class AuditLogOut(BaseModel):
+    id: int
+    event_type: str
+    mine_id: str | None
+    case_id: str | None
+    user_id: int | None
+    detail: str | None
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -76,6 +113,7 @@ class InspectionIn(BaseModel):
     client_id: str
     mine_id: str
     case_id: str | None = None
+    report_type: str = "Compliance Observation"
     checklist_answers: list
     gps_lat: float | None = None
     gps_lng: float | None = None
@@ -91,6 +129,7 @@ class InspectionOut(BaseModel):
     mine_id: str
     inspector_user_id: int
     case_id: str | None
+    report_type: str
     checklist_answers: list
     gps_lat: float | None
     gps_lng: float | None
@@ -115,12 +154,24 @@ class CaseOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     closed_at: datetime | None
+    due_date: datetime | None
+    escalation_target: str | None
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def is_overdue(self) -> bool:
+        if self.due_date is None or self.status == "CLOSED":
+            return False
+        due = self.due_date if self.due_date.tzinfo else self.due_date.replace(tzinfo=timezone.utc)
+        return due < datetime.now(timezone.utc)
 
 
 class CaseAssignIn(BaseModel):
     user_id: int
+    due_date: datetime | None = None
+    escalation_target: str | None = None
 
 
 class CaseResolveIn(BaseModel):

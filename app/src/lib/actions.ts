@@ -48,10 +48,16 @@ function toError(e: unknown): Error {
 export async function assignCaseAction(caseId: string, formData: FormData): Promise<void> {
   const userId = Number(formData.get("user_id"));
   if (!userId) throw new Error("Select an inspector.");
+  const dueDateRaw = String(formData.get("due_date") ?? "").trim();
+  const escalationTarget = String(formData.get("escalation_target") ?? "").trim();
   try {
     await apiFetch(`/api/v1/cases/${caseId}/assign`, {
       method: "POST",
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({
+        user_id: userId,
+        due_date: dueDateRaw ? new Date(dueDateRaw).toISOString() : null,
+        escalation_target: escalationTarget || null,
+      }),
     });
   } catch (e) {
     throw toError(e);
@@ -133,4 +139,22 @@ export async function syncBatchAction(items: unknown[]): Promise<ActionResult> {
   } catch (e) {
     return actionError(e);
   }
+}
+
+export async function markNotificationReadAction(notificationId: number, path: string): Promise<void> {
+  try {
+    await apiFetch(`/api/v1/notifications/${notificationId}/read`, { method: "POST" });
+  } catch (e) {
+    throw toError(e);
+  }
+  revalidatePath(path);
+}
+
+export async function reviewFieldReportAction(inspectionId: string): Promise<void> {
+  try {
+    await apiFetch(`/api/v1/inspections/${inspectionId}/review`, { method: "POST" });
+  } catch (e) {
+    throw toError(e);
+  }
+  revalidatePath("/gov/field-reports");
 }

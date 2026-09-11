@@ -4,6 +4,8 @@ import { ApiError, getMine, getMineCompliance, getMineDocuments, getMineFindings
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BandBadge, SeverityBadge } from "@/components/ui/badge";
 import { ScoreBar } from "@/components/score-bar";
+import { RiskPanel } from "@/components/risk-panel";
+import { formatRuleId } from "@/lib/format";
 
 const DOMAIN_LABEL: Record<string, string> = {
   STATUTORY: "Statutory Documents",
@@ -65,6 +67,8 @@ export default async function MineDetailPage({ params }: { params: Promise<{ min
         </Card>
       )}
 
+      <RiskPanel findings={findings} />
+
       <Card>
         <CardHeader>
           <CardTitle>Score breakdown</CardTitle>
@@ -87,7 +91,7 @@ export default async function MineDetailPage({ params }: { params: Promise<{ min
               <div>
                 <div className="text-sm">{f.description}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {f.rule_id ?? "—"} &middot; {DOMAIN_LABEL[f.domain] ?? f.domain} &middot; {f.source_type}
+                  {formatRuleId(f.rule_id)} &middot; {DOMAIN_LABEL[f.domain] ?? f.domain} &middot; {f.source_type}
                 </div>
               </div>
               <SeverityBadge severity={f.severity} />
