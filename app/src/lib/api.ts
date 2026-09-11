@@ -11,6 +11,15 @@ export class ApiError extends Error {
   }
 }
 
+function buildQuery(params?: Record<string, string | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== undefined) q.set(key, value);
+  }
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const headers = new Headers(options.headers);
@@ -228,10 +237,8 @@ export interface SatelliteFinding {
 
 export const getMe = () => apiFetch<Me>(`/api/v1/auth/me`);
 
-export const getMines = (params?: { state?: string; risk?: string }) => {
-  const q = new URLSearchParams(params as Record<string, string>).toString();
-  return apiFetch<Mine[]>(`/api/v1/mines${q ? `?${q}` : ""}`);
-};
+export const getMines = (params?: { state?: string; risk?: string }) =>
+  apiFetch<Mine[]>(`/api/v1/mines${buildQuery(params)}`);
 
 export const getMine = (mineId: string) => apiFetch<Mine>(`/api/v1/mines/${mineId}`);
 
@@ -247,10 +254,8 @@ export const getMineMonitoring = (mineId: string) =>
     throw e;
   });
 
-export const getCases = (params?: { status?: string; severity?: string; mine_id?: string }) => {
-  const q = new URLSearchParams(params as Record<string, string>).toString();
-  return apiFetch<Case[]>(`/api/v1/cases${q ? `?${q}` : ""}`);
-};
+export const getCases = (params?: { status?: string; severity?: string; mine_id?: string }) =>
+  apiFetch<Case[]>(`/api/v1/cases${buildQuery(params)}`);
 
 export const getCase = (caseId: string) => apiFetch<Case>(`/api/v1/cases/${caseId}`);
 
@@ -288,10 +293,8 @@ export const getComplaintsForCase = async (caseId: string): Promise<Complaint[]>
   return all.filter((c) => c.case_id === caseId);
 };
 
-export const getUsers = (params?: { role?: string }) => {
-  const q = new URLSearchParams(params as Record<string, string>).toString();
-  return apiFetch<UserRow[]>(`/api/v1/users${q ? `?${q}` : ""}`);
-};
+export const getUsers = (params?: { role?: string }) =>
+  apiFetch<UserRow[]>(`/api/v1/users${buildQuery(params)}`);
 
 export const getNotifications = () => apiFetch<NotificationRow[]>(`/api/v1/notifications`);
 
