@@ -88,9 +88,17 @@ class AuditLogOut(BaseModel):
     case_id: str | None
     user_id: int | None
     detail: str | None
+    prev_hash: str | None
+    hash: str
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AuditChainVerification(BaseModel):
+    valid: bool
+    total_events: int
+    broken_at_id: int | None
 
 
 class DocumentOut(BaseModel):

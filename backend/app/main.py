@@ -9,6 +9,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app import env  # noqa: F401 - side-effect import, loads .env first
 from app.limiter import limiter
 from app.routers import (
+    audit,
     auth,
     cases,
     complaints,
@@ -52,6 +53,7 @@ app.include_router(users.router)
 app.include_router(rules.router)
 app.include_router(contractors.router)
 app.include_router(complaints.router)
+app.include_router(audit.router)
 
 
 @app.get("/health")

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { AuditLogRow, Case, Finding, Inspection, Rule } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatRuleId } from "@/lib/format";
@@ -122,9 +123,15 @@ export function EvidenceGraph({
               <li key={a.id} className="text-xs text-muted-foreground">
                 {new Date(a.created_at).toLocaleString()} &mdash; {a.event_type}
                 {a.detail ? `: ${a.detail}` : ""}
+                <span className="ml-2 font-mono text-[10px] opacity-70">#{a.hash.slice(0, 10)}</span>
               </li>
             ))}
           </ul>
+          {auditRows.length > 0 && (
+            <Link href="/gov/audit" className="mt-2 inline-block text-xs text-accent underline">
+              Verify audit chain integrity
+            </Link>
+          )}
         </GraphNode>
       </CardContent>
     </Card>

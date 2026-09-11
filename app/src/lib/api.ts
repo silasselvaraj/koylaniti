@@ -163,7 +163,15 @@ export interface AuditLogRow {
   case_id: string | null;
   user_id: number | null;
   detail: string | null;
+  prev_hash: string | null;
+  hash: string;
   created_at: string;
+}
+
+export interface AuditChainVerification {
+  valid: boolean;
+  total_events: number;
+  broken_at_id: number | null;
 }
 
 export interface Contractor {
@@ -251,6 +259,8 @@ export const getCaseInspections = (caseId: string) => apiFetch<Inspection[]>(`/a
 export const getStandaloneInspections = () => apiFetch<Inspection[]>(`/api/v1/inspections?standalone=true`);
 
 export const getCaseAudit = (caseId: string) => apiFetch<AuditLogRow[]>(`/api/v1/cases/${caseId}/audit`);
+
+export const getAuditChainVerification = () => apiFetch<AuditChainVerification>(`/api/v1/audit/verify`);
 
 export const getRules = (domain?: string) => apiFetch<Rule[]>(`/api/v1/rules${domain ? `?domain=${domain}` : ""}`);
 

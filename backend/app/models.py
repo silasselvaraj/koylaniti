@@ -209,6 +209,12 @@ class Notification(Base):
 
 
 class AuditLog(Base):
+    """Append-only, hash-linked: each row's hash covers its own fields plus the previous
+    row's hash (see app/audit.py::log_event), so altering or deleting a past row breaks
+    the chain in a way app/audit.py::verify_chain can detect. No application route ever
+    updates or deletes a row here - see app/audit.py for the full note on what this
+    guarantees and what it doesn't (no DB-level enforcement, no distributed trust)."""
+
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -217,4 +223,6 @@ class AuditLog(Base):
     case_id: Mapped[str | None] = mapped_column(default=None)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
     detail: Mapped[str | None] = mapped_column(default=None)
+    prev_hash: Mapped[str | None] = mapped_column(default=None)
+    hash: Mapped[str] = mapped_column(default="")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
