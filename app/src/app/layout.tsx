@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,6 +16,15 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "KoylaNiti",
   description: "SIH26024 - AI-Based Smart Governance and Compliance Monitoring System for Coal Mines",
+  manifest: "/manifest.json",
+  icons: {
+    icon: ["/icon-192.png", "/icon-512.png"],
+    apple: "/icon-192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#234529",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
