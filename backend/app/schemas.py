@@ -197,3 +197,42 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PublicMineOut(BaseModel):
+    """Score-free mine listing for the anonymous complaint form."""
+
+    id: str
+    name: str
+    state: str
+    district: str
+
+    model_config = {"from_attributes": True}
+
+
+class PublicComplaintStatusOut(BaseModel):
+    id: str
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PublicComplaintOut(BaseModel):
+    id: str
+    mine_id: str
+    category: str
+    description: str
+    status: str
+    case_id: str | None
+    reviewed_by_user_id: int | None
+    review_notes: str | None
+    ai_summary: str | None
+    created_at: datetime
+    has_photo: bool = False
+
+    model_config = {"from_attributes": True}
+
+
+class ComplaintReviewIn(BaseModel):
+    notes: str | None = None

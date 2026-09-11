@@ -11,6 +11,7 @@ from app.limiter import limiter
 from app.routers import (
     auth,
     cases,
+    complaints,
     contractors,
     documents,
     inspections,
@@ -50,6 +51,7 @@ app.include_router(notifications.router)
 app.include_router(users.router)
 app.include_router(rules.router)
 app.include_router(contractors.router)
+app.include_router(complaints.router)
 
 
 @app.get("/health")

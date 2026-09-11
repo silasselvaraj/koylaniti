@@ -158,3 +158,52 @@ export async function reviewFieldReportAction(inspectionId: string): Promise<voi
   }
   revalidatePath("/gov/field-reports");
 }
+
+export type SubmitComplaintResult = { ok: true; id: string } | { ok: false; error: string };
+
+export async function submitComplaintAction(
+  _prevState: unknown,
+  formData: FormData
+): Promise<SubmitComplaintResult> {
+  try {
+    const result = await apiFetch<{ id: string }>(`/api/v1/public/complaints`, {
+      method: "POST",
+      body: formData,
+    });
+    return { ok: true, id: result.id };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiError ? e.message || "Submission failed." : "Submission failed." };
+  }
+}
+
+export async function dismissComplaintAction(complaintId: string, formData: FormData): Promise<void> {
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  try {
+    await apiFetch(`/api/v1/complaints/${complaintId}/dismiss`, {
+      method: "POST",
+      body: JSON.stringify({ notes }),
+    });
+  } catch (e) {
+    throw toError(e);
+  }
+  revalidatePath(`/gov/complaints/${complaintId}`);
+  revalidatePath("/gov/complaints");
+}
+
+export async function escalateComplaintAction(complaintId: string, formData: FormData): Promise<void> {
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  let caseId: string | null = null;
+  try {
+    const result = await apiFetch<{ case_id: string | null }>(`/api/v1/complaints/${complaintId}/escalate`, {
+      method: "POST",
+      body: JSON.stringify({ notes }),
+    });
+    caseId = result.case_id;
+  } catch (e) {
+    throw toError(e);
+  }
+  revalidatePath(`/gov/complaints/${complaintId}`);
+  revalidatePath("/gov/complaints");
+  revalidatePath("/gov/cases");
+  if (caseId) redirect(`/gov/cases/${caseId}`);
+}

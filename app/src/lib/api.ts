@@ -176,6 +176,33 @@ export interface Contractor {
   created_at: string;
 }
 
+export interface PublicMine {
+  id: string;
+  name: string;
+  state: string;
+  district: string;
+}
+
+export interface ComplaintStatus {
+  id: string;
+  status: "NEW" | "UNDER_REVIEW" | "ESCALATED" | "DISMISSED";
+  created_at: string;
+}
+
+export interface Complaint {
+  id: string;
+  mine_id: string;
+  category: string;
+  description: string;
+  status: "NEW" | "UNDER_REVIEW" | "ESCALATED" | "DISMISSED";
+  case_id: string | null;
+  reviewed_by_user_id: number | null;
+  review_notes: string | null;
+  ai_summary: string | null;
+  created_at: string;
+  has_photo: boolean;
+}
+
 export interface SatelliteFinding {
   mine_id: string;
   rule_id: string;
@@ -233,6 +260,23 @@ export const getContractor = (contractorId: string) =>
   apiFetch<{ contractor: Contractor; findings: Finding[]; open_case_ids: string[] }>(
     `/api/v1/contractors/${contractorId}`
   );
+
+// Public (unauthenticated) - apiFetch simply omits the Authorization header when no
+// session cookie exists, which is exactly right for a logged-out visitor.
+export const getPublicMines = () => apiFetch<PublicMine[]>(`/api/v1/public/mines`);
+
+export const getComplaintStatus = (complaintId: string) =>
+  apiFetch<ComplaintStatus>(`/api/v1/public/complaints/${complaintId}/status`);
+
+export const getComplaints = (status?: string) =>
+  apiFetch<Complaint[]>(`/api/v1/complaints${status ? `?status=${status}` : ""}`);
+
+export const getComplaint = (complaintId: string) => apiFetch<Complaint>(`/api/v1/complaints/${complaintId}`);
+
+export const getComplaintsForCase = async (caseId: string): Promise<Complaint[]> => {
+  const all = await getComplaints();
+  return all.filter((c) => c.case_id === caseId);
+};
 
 export const getUsers = (params?: { role?: string }) => {
   const q = new URLSearchParams(params as Record<string, string>).toString();

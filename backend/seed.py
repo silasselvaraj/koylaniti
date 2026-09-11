@@ -13,10 +13,11 @@ Produces exactly the dataset the judge demo script depends on:
 
 from datetime import date, datetime, timedelta, timezone
 
+from app.audit import log_event
 from app.auth import hash_password
 from app.database import Base, SessionLocal, engine
 from app.id_generator import next_id
-from app.models import Case, ComplianceFinding, Contractor, Document, Inspection, Mine, Rule, User
+from app.models import Case, ComplianceFinding, Contractor, Document, Inspection, Mine, PublicComplaint, Rule, User
 from app.satellite.mock_data import MOCK_SATELLITE_FINDINGS
 from app.scoring.config import SEVERITY_POINTS
 from app.scoring.engine import compute_mine_score
@@ -350,6 +351,76 @@ db.add(
     )
 )
 db.commit()
+
+# ---------------------------------------------------------------------------
+# Public complaints (anonymous, no identity captured) - one at each stage of
+# the triage lifecycle so the queue isn't empty-state-only.
+# ---------------------------------------------------------------------------
+
+new_complaint_id = next_id(db, PublicComplaint, PublicComplaint.id, "COMP")
+db.add(
+    PublicComplaint(
+        id=new_complaint_id, mine_id="MINE-1003", category="Environmental",
+        description="Water in the nearby stream has turned a strange colour over the last two weeks and "
+                     "there is a strong chemical smell near the eastern boundary of the mine.",
+        status="NEW",
+        ai_summary="The complainant reports discoloured water and a chemical odour near a stream at the "
+                    "mine's eastern boundary, observed over roughly two weeks.",
+        created_at=datetime.now(timezone.utc) - timedelta(days=1),
+    )
+)
+db.flush()  # next_id below scans for existing COMP- rows - must see this one first
+
+dismissed_complaint_id = next_id(db, PublicComplaint, PublicComplaint.id, "COMP")
+db.add(
+    PublicComplaint(
+        id=dismissed_complaint_id, mine_id="MINE-1003", category="Labour/Worker",
+        description="Workers on the night shift say they were not given the usual tea break last week.",
+        status="DISMISSED",
+        ai_summary="The complainant states that night-shift workers did not receive a scheduled tea break "
+                    "on one occasion last week.",
+        reviewed_by_user_id=user_by_username["dgms_east"].id,
+        review_notes="Single-occurrence scheduling issue, not a compliance violation. Advised mine manager "
+                      "informally; no case warranted.",
+        created_at=datetime.now(timezone.utc) - timedelta(days=10),
+    )
+)
+db.flush()
+
+escalated_case_id = next_id(db, Case, Case.id, "CASE")
+db.add(
+    Case(
+        id=escalated_case_id, mine_id="MINE-1008", status="DETECTED", severity="MEDIUM",
+        title="Public complaint: Safety",
+        created_by="PUBLIC_COMPLAINT",
+        created_at=datetime.now(timezone.utc) - timedelta(days=4),
+    )
+)
+db.flush()
+escalated_complaint_id = next_id(db, PublicComplaint, PublicComplaint.id, "COMP")
+db.add(
+    PublicComplaint(
+        id=escalated_complaint_id, mine_id="MINE-1008", category="Safety",
+        description="Saw a haul truck driver without a seatbelt and no functioning reverse-warning alarm on "
+                     "site yesterday afternoon.",
+        status="ESCALATED",
+        case_id=escalated_case_id,
+        ai_summary="The complainant reports observing a haul truck being operated without a seatbelt in use "
+                    "and with a non-functioning reverse-warning alarm.",
+        reviewed_by_user_id=user_by_username["dgms_south"].id,
+        review_notes="Credible, specific safety concern - escalating for a field inspection.",
+        created_at=datetime.now(timezone.utc) - timedelta(days=4),
+    )
+)
+log_event(db, "complaint_submitted", mine_id="MINE-1008", detail=escalated_complaint_id)
+log_event(
+    db, "complaint_escalated", mine_id="MINE-1008", case_id=escalated_case_id,
+    user_id=user_by_username["dgms_south"].id, detail=escalated_complaint_id,
+)
+log_event(db, "case_auto_created", mine_id="MINE-1008", case_id=escalated_case_id, detail=f"from complaint {escalated_complaint_id}")
+db.commit()
+print(f"Seeded 3 public complaints ({new_complaint_id} NEW, {dismissed_complaint_id} DISMISSED, "
+      f"{escalated_complaint_id} ESCALATED to {escalated_case_id}).")
 
 print("\nSeed complete.")
 print(f"Demo login (any user above), password: {DEMO_PASSWORD}")

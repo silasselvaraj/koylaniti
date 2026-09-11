@@ -8,12 +8,14 @@ const NAV: Record<string, { href: string; label: string }[]> = {
   MINISTRY_ADMIN: [
     { href: "/gov", label: "Map" },
     { href: "/gov/cases", label: "Cases" },
+    { href: "/gov/complaints", label: "Complaints" },
     { href: "/gov/field-reports", label: "Field Reports" },
     { href: "/gov/contractors", label: "Contractors" },
   ],
   DGMS_OFFICER: [
     { href: "/gov", label: "Map" },
     { href: "/gov/cases", label: "Cases" },
+    { href: "/gov/complaints", label: "Complaints" },
     { href: "/gov/field-reports", label: "Field Reports" },
     { href: "/gov/contractors", label: "Contractors" },
   ],

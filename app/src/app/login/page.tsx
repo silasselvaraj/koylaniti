@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, type ActionResult } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,11 @@ export default function LoginPage() {
         </form>
         <p className="mt-6 text-xs text-muted-foreground">
           Demo accounts: admin, dgms_east, manager3, inspector1 &mdash; password <code>demo-2026</code>
+        </p>
+        <p className="mt-3 border-t border-border pt-3 text-center text-sm">
+          <Link href="/complaint/new" className="text-accent underline">
+            Report a concern anonymously
+          </Link>
         </p>
       </div>
     </div>

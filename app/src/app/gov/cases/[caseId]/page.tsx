@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { ApiError, getCase, getCaseAudit, getCaseInspections, getMine, getMineFindings, getRules, getUsers } from "@/lib/api";
+import Link from "next/link";
+import { ApiError, getCase, getCaseAudit, getCaseInspections, getComplaintsForCase, getMine, getMineFindings, getRules, getUsers } from "@/lib/api";
 import { assignCaseAction, resolveCaseAction, verifyCaseAction } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CaseStatusBadge, OverdueBadge, SeverityBadge } from "@/components/ui/badge";
@@ -20,13 +21,14 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
     throw e;
   }
 
-  const [mine, findings, inspections, rules, auditRows, allUsers] = await Promise.all([
+  const [mine, findings, inspections, rules, auditRows, allUsers, originatingComplaints] = await Promise.all([
     getMine(caseRow.mine_id),
     getMineFindings(caseRow.mine_id),
     getCaseInspections(caseId),
     getRules(),
     getCaseAudit(caseId),
     getUsers(),
+    getComplaintsForCase(caseId),
   ]);
   const linkedFindings = findings.filter((f) => f.case_id === caseId);
   const inspectors = allUsers.filter((u) => u.role === "FIELD_INSPECTOR");
@@ -48,6 +50,23 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
           <CaseStatusBadge status={caseRow.status} />
         </div>
       </div>
+
+      {originatingComplaints.length > 0 && (
+        <Card>
+          <CardContent className="flex items-center justify-between py-3">
+            <span className="text-sm">
+              Originated from public complaint{" "}
+              <span className="font-mono">{originatingComplaints[0].id}</span>
+            </span>
+            <Link
+              href={`/gov/complaints/${originatingComplaints[0].id}`}
+              className="inline-flex h-9 items-center justify-center rounded bg-surface-inset px-3 text-sm font-medium hover:bg-border"
+            >
+              View complaint
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {caseRow.ai_brief && (
         <Card>

@@ -9,6 +9,8 @@ ROLES = ("MINISTRY_ADMIN", "DGMS_OFFICER", "MINE_MANAGER", "FIELD_INSPECTOR")
 DOMAINS = ("STATUTORY", "SAFETY", "ENVIRONMENTAL", "OPERATIONAL")
 BANDS = ("GREEN", "YELLOW", "RED")
 REPORT_TYPES = ("Compliance Observation", "Safety Incident", "Environmental Observation", "Operational Exception")
+COMPLAINT_CATEGORIES = ("Safety", "Environmental", "Labour/Worker", "Corruption/Malpractice", "Other")
+COMPLAINT_STATUSES = ("NEW", "UNDER_REVIEW", "ESCALATED", "DISMISSED")
 SEVERITIES = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
 CASE_STATUSES = (
     "DETECTED",
@@ -168,6 +170,31 @@ class Case(Base):
     closed_at: Mapped[datetime | None] = mapped_column(default=None)
 
     mine: Mapped["Mine"] = relationship()
+
+
+class PublicComplaint(Base):
+    """Anonymous complaint from a member of the public / mine worker - deliberately no
+    identity field at all. Lands in a triage queue; an officer decides whether to
+    escalate it into a real Case (see routers/complaints.py::escalate_complaint)."""
+
+    __tablename__ = "public_complaints"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    mine_id: Mapped[str] = mapped_column(ForeignKey("mines.id", ondelete="CASCADE"))
+    category: Mapped[str]
+    description: Mapped[str]
+    photo_data: Mapped[bytes | None] = mapped_column(LargeBinary, default=None)
+    photo_content_type: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="NEW")
+    case_id: Mapped[str | None] = mapped_column(ForeignKey("cases.id"), default=None)
+    reviewed_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
+    review_notes: Mapped[str | None] = mapped_column(default=None)
+    ai_summary: Mapped[str | None] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    @property
+    def has_photo(self) -> bool:
+        return self.photo_data is not None
 
 
 class Notification(Base):
