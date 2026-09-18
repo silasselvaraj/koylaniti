@@ -114,7 +114,8 @@ E:\SIH_NEW\
     │   ├── actions.ts            — Server Actions (all mutations go through here)
     │   ├── session.ts            — JWT cookie handling
     │   ├── offline-queue.ts      — localStorage-backed offline inspection queue, client-generated idempotency keys
-    │   └── format.ts, risk-factors.ts, utils.ts
+    │   ├── i18n/                 — bilingual UI: hi.ts (Hindi dictionary), index.ts (translate()), server.ts (getLocale/getT), client.tsx (I18nProvider/useI18n)
+    │   └── format.ts, status-labels.ts, risk-factors.ts, utils.ts
     └── public/
         ├── manifest.json, sw.js, icon-*.png   — PWA installability (see §9)
         └── satellite/            — seeded before/after mine imagery JPGs
@@ -240,6 +241,16 @@ config outside the repo, so always tell the user explicitly if you do this).
 - **Contractor management** — lightweight: a finding can optionally link to a contractor;
   the contractor's profile aggregates their linked findings/open actions across mines.
 - **Full RBAC + audit trail + JWT auth** — see §4.
+- **Bilingual UI (English / Hindi)** — hand-rolled i18n (no new dependency) in
+  `app/src/lib/i18n/`: a key-as-source-language dictionary (`hi.ts`), a pure `translate()`
+  helper (`index.ts`), a server-side `getLocale()`/`getT()` (`server.ts`, reads a `locale`
+  cookie), and a client `I18nProvider`/`useI18n()` (`client.tsx`). An EN/हिंदी toggle sits in
+  the site header and on the login screen; the choice persists in a `locale` cookie (no URL
+  change), default English. All UI chrome is translated (nav, labels, buttons, status badges,
+  empty states, errors); seeded/submitted DATA (mine names, finding/rule descriptions, case
+  titles, AI briefs) stays English, and backend-generated strings (notifications, validation
+  messages) still arrive in English — translating those would need backend changes. Formal
+  Hindi (आप) register; the `<html lang>` attribute follows the chosen locale.
 
 ---
 
@@ -318,6 +329,18 @@ reasoning and the "what it would take" answer, worth reading before touching any
 - **`compute_mine_score`'s auto-case-creation** needs a `db.flush()` after `db.add(case)`
   before setting `finding.case_id` on other rows — Postgres enforces FK integrity strictly
   (SQLite, used in some earlier local testing, did not catch this).
+- **Bilingual UI is hand-rolled, not a library** — `app/src/lib/i18n/` uses the
+  key-as-source-language pattern (the English string is the dictionary key; missing keys fall
+  back to English), so English always works with zero code changes. The `locale` cookie is the
+  single source of truth: server components use `getT()`, client components use `useI18n()`.
+  Don't add a routing-based locale scheme or an i18n dependency without asking.
+- **Theme is earth-tone/cream, light-only** — the original green palette was replaced
+  (background `#EDE8E8`, accent dark coffee brown `#362418`, surfaces `#FFFDFD`/tan `#D9C7B3`,
+  text `#000501`). Dark mode was **removed** (the `prefers-color-scheme` block was deleted), so
+  the app always renders the light theme. The semantic band/severity ramp (green/yellow/red +
+  LOW→CRITICAL) is deliberately **kept as-is** — those carry good/bad meaning. All color
+  tokens live in `app/src/app/globals.css` `:root`; don't reintroduce dark mode or re-green the
+  theme without asking.
 
 ---
 
@@ -340,9 +363,9 @@ generator script is gone:
 3. Screenshots for the manual were captured by running the app locally (via the Browser
    pane) and screenshotting each role's key pages — regenerate them the same way if the UI
    has changed meaningfully since the PDFs were last built.
-4. Both PDFs use a consistent green-forward color palette matching the app's own theme
-   (`ACCENT_STRONG = #234529`, etc.) — keep that palette if regenerating, for visual
-   consistency with the app itself.
+4. The PDFs were generated against the app's original green theme; the UI has since been
+   restyled to earth-tone/cream (§9), so their embedded screenshots show the OLD green look and
+   are stale. Regenerate screenshots against the current theme before trusting them.
 
 ---
 
