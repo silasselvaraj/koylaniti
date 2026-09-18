@@ -4,8 +4,10 @@ import { submitEvidenceAction } from "@/lib/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getT } from "@/lib/i18n/server";
 
 export default async function ManagerCaseDetailPage({ params }: { params: Promise<{ caseId: string }> }) {
+  const t = await getT();
   const { caseId } = await params;
   const me = await getMe();
 
@@ -36,7 +38,7 @@ export default async function ManagerCaseDetailPage({ params }: { params: Promis
 
       <Card>
         <CardHeader>
-          <CardTitle>Findings to remediate</CardTitle>
+          <CardTitle>{t("Findings to remediate")}</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
           {linkedFindings.map((f) => (
@@ -49,25 +51,24 @@ export default async function ManagerCaseDetailPage({ params }: { params: Promis
 
       <Card>
         <CardHeader>
-          <CardTitle>Remediation</CardTitle>
+          <CardTitle>{t("Remediation")}</CardTitle>
         </CardHeader>
         <CardContent>
           {(caseRow.status === "ASSIGNED" || caseRow.status === "INSPECTION_REMEDIATION") && (
             <form action={submitEvidenceAction.bind(null, caseId)}>
               <p className="mb-3 text-sm text-muted-foreground">
-                Mark remediation evidence as submitted once corrective action has been taken. A DGMS officer will
-                verify before the case is closed.
+                {t("Mark remediation evidence as submitted once corrective action has been taken. A DGMS officer will verify before the case is closed.")}
               </p>
-              <Button type="submit">Submit remediation evidence</Button>
+              <Button type="submit">{t("Submit remediation evidence")}</Button>
             </form>
           )}
           {caseRow.status === "EVIDENCE_SUBMITTED" && (
-            <p className="text-sm text-muted-foreground">Evidence submitted &mdash; awaiting DGMS verification.</p>
+            <p className="text-sm text-muted-foreground">{t("Evidence submitted — awaiting DGMS verification.")}</p>
           )}
-          {caseRow.status === "VERIFIED" && <p className="text-sm text-muted-foreground">Verified &mdash; awaiting closure.</p>}
-          {caseRow.status === "CLOSED" && <p className="text-sm text-[var(--band-green)]">Case closed.</p>}
+          {caseRow.status === "VERIFIED" && <p className="text-sm text-muted-foreground">{t("Verified — awaiting closure.")}</p>}
+          {caseRow.status === "CLOSED" && <p className="text-sm text-[var(--band-green)]">{t("Case closed.")}</p>}
           {(caseRow.status === "DETECTED" || caseRow.status === "TRIAGED") && (
-            <p className="text-sm text-muted-foreground">Waiting for DGMS to assign this case to an inspector.</p>
+            <p className="text-sm text-muted-foreground">{t("Waiting for DGMS to assign this case to an inspector.")}</p>
           )}
         </CardContent>
       </Card>

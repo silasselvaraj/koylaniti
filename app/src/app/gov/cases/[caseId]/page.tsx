@@ -9,8 +9,10 @@ import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { RiskPanel } from "@/components/risk-panel";
 import { EvidenceGraph } from "@/components/evidence-graph";
 import { formatRuleId } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ caseId: string }> }) {
+  const t = await getT();
   const { caseId } = await params;
 
   let caseRow;
@@ -41,7 +43,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
         <div>
           <h1 className="text-lg font-semibold">{caseRow.title}</h1>
           <p className="text-sm text-muted-foreground">
-            {mine.name} &middot; {caseRow.id} &middot; opened {new Date(caseRow.created_at).toLocaleString()}
+            {mine.name} &middot; {caseRow.id} &middot; {t("opened")} {new Date(caseRow.created_at).toLocaleString()}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -55,14 +57,14 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
         <Card>
           <CardContent className="flex items-center justify-between py-3">
             <span className="text-sm">
-              Originated from public complaint{" "}
+              {t("Originated from public complaint")}{" "}
               <span className="font-mono">{originatingComplaints[0].id}</span>
             </span>
             <Link
               href={`/gov/complaints/${originatingComplaints[0].id}`}
               className="inline-flex h-9 items-center justify-center rounded bg-surface-inset px-3 text-sm font-medium hover:bg-border"
             >
-              View complaint
+              {t("View complaint")}
             </Link>
           </CardContent>
         </Card>
@@ -71,7 +73,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
       {caseRow.ai_brief && (
         <Card>
           <CardHeader>
-            <CardTitle>AI case brief</CardTitle>
+            <CardTitle>{t("AI case brief")}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm">{caseRow.ai_brief}</CardContent>
         </Card>
@@ -90,7 +92,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
 
       <Card>
         <CardHeader>
-          <CardTitle>Linked findings ({linkedFindings.length})</CardTitle>
+          <CardTitle>{t("Linked findings ({count})", { count: linkedFindings.length })}</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
           {linkedFindings.map((f) => (
@@ -110,7 +112,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
       {inspections.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Inspection evidence</CardTitle>
+            <CardTitle>{t("Inspection evidence")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {inspections.map((insp) => (
@@ -120,7 +122,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
                     {insp.id} &middot; {insp.submitted_at ? new Date(insp.submitted_at).toLocaleString() : "—"}
                   </span>
                   <span>
-                    {insp.gps_lat && insp.gps_lng ? `${insp.gps_lat.toFixed(4)}, ${insp.gps_lng.toFixed(4)}` : "No GPS"}
+                    {insp.gps_lat && insp.gps_lng ? `${insp.gps_lat.toFixed(4)}, ${insp.gps_lng.toFixed(4)}` : t("No GPS")}
                   </span>
                 </div>
                 <ul className="space-y-1 text-sm">
@@ -128,7 +130,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
                     <li key={item.item_id} className="flex items-center justify-between">
                       <span>{item.label}</span>
                       <span className={item.passed ? "text-[var(--band-green)]" : "text-[var(--severity-critical)]"}>
-                        {item.passed ? "Pass" : "Fail"}
+                        {item.passed ? t("Pass") : t("Fail")}
                       </span>
                     </li>
                   ))}
@@ -137,7 +139,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
                 {insp.has_photo && (
                   <img
                     src={`/api/proxy/inspections/${insp.id}/photo`}
-                    alt="Inspection evidence"
+                    alt={t("Inspection evidence")}
                     className="mt-2 max-h-64 rounded border border-border"
                   />
                 )}
@@ -149,17 +151,17 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
 
       <Card>
         <CardHeader>
-          <CardTitle>Actions</CardTitle>
+          <CardTitle>{t("Actions")}</CardTitle>
         </CardHeader>
         <CardContent>
           {(caseRow.status === "DETECTED" || caseRow.status === "TRIAGED") && (
             <form action={assignCaseAction.bind(null, caseId)} className="space-y-3">
               <div className="flex items-end gap-3">
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="user_id">Assign to inspector</Label>
+                  <Label htmlFor="user_id">{t("Assign to inspector")}</Label>
                   <Select id="user_id" name="user_id" required defaultValue="">
                     <option value="" disabled>
-                      Select an inspector
+                      {t("Select an inspector")}
                     </option>
                     {inspectors.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -171,45 +173,46 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="due_date">Due date (SLA)</Label>
+                  <Label htmlFor="due_date">{t("Due date (SLA)")}</Label>
                   <Input id="due_date" name="due_date" type="date" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="escalation_target">Escalation target</Label>
-                  <Input id="escalation_target" name="escalation_target" placeholder="e.g. State DGMS Office" />
+                  <Label htmlFor="escalation_target">{t("Escalation target")}</Label>
+                  <Input id="escalation_target" name="escalation_target" placeholder={t("e.g. State DGMS Office")} />
                 </div>
               </div>
-              <Button type="submit">Assign case</Button>
+              <Button type="submit">{t("Assign case")}</Button>
             </form>
           )}
 
           {(caseRow.status === "ASSIGNED" || caseRow.status === "INSPECTION_REMEDIATION") && (
             <p className="text-sm text-muted-foreground">
-              Waiting for the assigned inspector to submit checklist evidence.
-              {caseRow.due_date && ` Due ${new Date(caseRow.due_date).toLocaleDateString()}.`}
-              {caseRow.escalation_target && ` Escalation: ${caseRow.escalation_target}.`}
+              {t("Waiting for the assigned inspector to submit checklist evidence.")}
+              {caseRow.due_date && `${t(" Due ")}${new Date(caseRow.due_date).toLocaleDateString()}.`}
+              {caseRow.escalation_target && `${t(" Escalation: ")}${caseRow.escalation_target}.`}
             </p>
           )}
 
           {caseRow.status === "EVIDENCE_SUBMITTED" && (
             <form action={verifyCaseAction.bind(null, caseId)}>
-              <Button type="submit">Verify evidence</Button>
+              <Button type="submit">{t("Verify evidence")}</Button>
             </form>
           )}
 
           {caseRow.status === "VERIFIED" && (
             <form action={resolveCaseAction.bind(null, caseId)} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="reason">Closure reason</Label>
-                <Textarea id="reason" name="reason" rows={2} placeholder="Evidence verified, remediation complete." />
+                <Label htmlFor="reason">{t("Closure reason")}</Label>
+                <Textarea id="reason" name="reason" rows={2} placeholder={t("Evidence verified, remediation complete.")} />
               </div>
-              <Button type="submit">Close case</Button>
+              <Button type="submit">{t("Close case")}</Button>
             </form>
           )}
 
           {caseRow.status === "CLOSED" && (
             <p className="text-sm text-[var(--band-green)]">
-              Closed {caseRow.closed_at ? new Date(caseRow.closed_at).toLocaleString() : ""}.
+              {t("Closed ")}
+              {caseRow.closed_at ? new Date(caseRow.closed_at).toLocaleString() : ""}.
             </p>
           )}
         </CardContent>

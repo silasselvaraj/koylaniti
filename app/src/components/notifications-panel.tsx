@@ -2,6 +2,7 @@ import type { NotificationRow } from "@/lib/api";
 import { markNotificationReadAction } from "@/lib/actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 
 function caseHref(role: "gov" | "manager" | "inspector", caseId: string): string {
@@ -10,7 +11,7 @@ function caseHref(role: "gov" | "manager" | "inspector", caseId: string): string
   return `/gov/cases/${caseId}`;
 }
 
-export function NotificationsPanel({
+export async function NotificationsPanel({
   notifications,
   path,
   role,
@@ -19,10 +20,11 @@ export function NotificationsPanel({
   path: string;
   role: "gov" | "manager" | "inspector";
 }) {
+  const t = await getT();
   return (
     <Card>
       <CardContent className="divide-y divide-border p-0">
-        {notifications.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No alerts.</p>}
+        {notifications.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">{t("No alerts.")}</p>}
         {notifications.map((n) => (
           <div key={n.id} className="flex items-center justify-between gap-4 px-4 py-3">
             <div>
@@ -42,7 +44,7 @@ export function NotificationsPanel({
             {!n.read && (
               <form action={markNotificationReadAction.bind(null, n.id, path)}>
                 <Button type="submit" variant="secondary" size="sm">
-                  Mark read
+                  {t("Mark read")}
                 </Button>
               </form>
             )}

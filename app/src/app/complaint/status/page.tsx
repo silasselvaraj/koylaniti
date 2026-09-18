@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getT } from "@/lib/i18n/server";
 
 const STATUS_LABEL: Record<string, string> = {
   NEW: "Received, not yet reviewed",
@@ -17,6 +18,7 @@ export default async function ComplaintStatusPage({
 }: {
   searchParams: Promise<{ id?: string }>;
 }) {
+  const t = await getT();
   const { id } = await searchParams;
   let notFound = false;
   let status: Awaited<ReturnType<typeof getComplaintStatus>> | null = null;
@@ -32,19 +34,19 @@ export default async function ComplaintStatusPage({
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 py-10">
-      <h1 className="text-lg font-semibold">Check complaint status</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Enter the complaint ID you were given at submission.</p>
+      <h1 className="text-lg font-semibold">{t("Check complaint status")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t("Enter the complaint ID you were given at submission.")}</p>
 
       <form action="/complaint/status" method="GET" className="mt-6 flex items-end gap-3">
         <div className="flex-1 space-y-1">
-          <Label htmlFor="id">Complaint ID</Label>
+          <Label htmlFor="id">{t("Complaint ID")}</Label>
           <Input id="id" name="id" defaultValue={id ?? ""} placeholder="COMP-1000" />
         </div>
-        <Button type="submit">Check</Button>
+        <Button type="submit">{t("Check")}</Button>
       </form>
 
       {notFound && (
-        <p className="mt-4 text-sm text-[var(--severity-critical)]">No complaint found with that ID.</p>
+        <p className="mt-4 text-sm text-[var(--severity-critical)]">{t("No complaint found with that ID.")}</p>
       )}
 
       {status && (
@@ -52,17 +54,17 @@ export default async function ComplaintStatusPage({
           <CardContent className="space-y-2 py-4">
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm">{status.id}</span>
-              <Badge>{status.status}</Badge>
+              <Badge>{t(status.status)}</Badge>
             </div>
-            <p className="text-sm">{STATUS_LABEL[status.status] ?? status.status}</p>
-            <p className="text-xs text-muted-foreground">Submitted {new Date(status.created_at).toLocaleString()}</p>
+            <p className="text-sm">{t(STATUS_LABEL[status.status] ?? status.status)}</p>
+            <p className="text-xs text-muted-foreground">{t("Submitted ")}{new Date(status.created_at).toLocaleString()}</p>
           </CardContent>
         </Card>
       )}
 
       <p className="mt-6 text-xs text-muted-foreground">
         <Link href="/complaint/new" className="text-accent underline">
-          File a new complaint
+          {t("File a new complaint")}
         </Link>
       </p>
     </div>

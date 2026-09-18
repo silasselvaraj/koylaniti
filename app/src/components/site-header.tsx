@@ -3,6 +3,8 @@ import { getFullName, getRole } from "@/lib/session";
 import { logoutAction } from "@/lib/actions";
 import { getNotifications } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { getT } from "@/lib/i18n/server";
 
 const NAV: Record<string, { href: string; label: string }[]> = {
   MINISTRY_ADMIN: [
@@ -36,6 +38,7 @@ const NOTIFICATIONS_PATH: Record<string, string> = {
 export async function SiteHeader() {
   const role = await getRole();
   const name = await getFullName();
+  const t = await getT();
   const nav = role ? NAV[role] ?? [] : [];
   const unreadCount = role ? (await getNotifications()).filter((n) => !n.read).length : 0;
 
@@ -49,15 +52,16 @@ export async function SiteHeader() {
           <nav className="flex gap-4">
             {nav.map((item) => (
               <Link key={item.href} href={item.href} className="text-sm text-muted-foreground hover:text-foreground">
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <LocaleToggle />
           {role && (
-            <Link href={NOTIFICATIONS_PATH[role]} className="relative text-sm text-muted-foreground hover:text-foreground" aria-label="Alerts">
-              Alerts
+            <Link href={NOTIFICATIONS_PATH[role]} className="relative text-sm text-muted-foreground hover:text-foreground" aria-label={t("Alerts")}>
+              {t("Alerts")}
               {unreadCount > 0 && (
                 <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--severity-critical)] px-1 text-[10px] font-medium text-white">
                   {unreadCount}
@@ -68,7 +72,7 @@ export async function SiteHeader() {
           {name && <span className="text-sm text-muted-foreground">{name}</span>}
           <form action={logoutAction}>
             <Button type="submit" variant="ghost" size="sm">
-              Log out
+              {t("Log out")}
             </Button>
           </form>
         </div>

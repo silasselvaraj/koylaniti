@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { getCases, getMines } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
-import { CaseStatusBadge, OverdueBadge, SeverityBadge, caseStatusLabel } from "@/components/ui/badge";
+import { CaseStatusBadge, OverdueBadge, SeverityBadge } from "@/components/ui/badge";
+import { caseStatusLabel } from "@/lib/status-labels";
+import { getT } from "@/lib/i18n/server";
 
 export default async function CasesPage({
   searchParams,
 }: {
   searchParams: Promise<{ status?: string; severity?: string }>;
 }) {
+  const t = await getT();
   const { status, severity } = await searchParams;
   const [cases, mines] = await Promise.all([getCases({ status, severity }), getMines()]);
   const mineById = new Map(mines.map((m) => [m.id, m]));
@@ -17,10 +20,10 @@ export default async function CasesPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Cases</h1>
+        <h1 className="text-lg font-semibold">{t("Cases")}</h1>
         <div className="flex gap-2 text-xs">
           <Link href="/gov/cases" className={`rounded px-2 py-1 ${!status ? "bg-accent text-accent-foreground" : "bg-surface-inset"}`}>
-            All
+            {t("All")}
           </Link>
           {statuses.map((s) => (
             <Link
@@ -28,7 +31,7 @@ export default async function CasesPage({
               href={`/gov/cases?status=${s}`}
               className={`rounded px-2 py-1 ${status === s ? "bg-accent text-accent-foreground" : "bg-surface-inset"}`}
             >
-              {caseStatusLabel(s)}
+              {t(caseStatusLabel(s))}
             </Link>
           ))}
         </div>
@@ -36,7 +39,7 @@ export default async function CasesPage({
 
       <Card>
         <CardContent className="divide-y divide-border p-0">
-          {cases.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No cases match this filter.</p>}
+          {cases.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">{t("No cases match this filter.")}</p>}
           {cases.map((c) => {
             const mine = mineById.get(c.mine_id);
             return (
@@ -44,7 +47,7 @@ export default async function CasesPage({
                 <div>
                   <div className="text-sm font-medium">{c.title}</div>
                   <div className="text-xs text-muted-foreground">
-                    {mine?.name ?? c.mine_id} &middot; {c.id} &middot; opened {new Date(c.created_at).toLocaleDateString()}
+                    {mine?.name ?? c.mine_id} &middot; {c.id} &middot; {t("opened")} {new Date(c.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -15,10 +15,11 @@ Every coal mine's compliance status is fused from three signal types — statuto
 - **Offline-first field app** — inspectors capture GPS + timestamp + photo evidence on-site, queue it locally when offline, and sync in one batch (idempotent) on reconnect.
 - **SLA + escalation** — corrective actions carry a due date and escalation target; overdue cases and critical findings fan out in-app alerts to the relevant oversight officers.
 - **Role-based access, enforced server-side** — Ministry Admin (all mines), DGMS Officer (own jurisdiction), Mine Manager (own mine), Field Inspector (own assignments) — a role can never see or act beyond its scope, verified by API tests, not just hidden UI.
+- **Bilingual (English / Hindi)** — a one-tap EN/हिंदी toggle on every screen (header and login), choice remembered across sessions; formal Hindi throughout, with all UI chrome translated and a warm earth-tone/cream visual theme.
 
 ## Tech stack
 
-- **Frontend**: Next.js 16 (App Router, Server Components + Server Actions), TypeScript, Tailwind v4, Leaflet
+- **Frontend**: Next.js 16 (App Router, Server Components + Server Actions), TypeScript, Tailwind v4, Leaflet, hand-rolled i18n (English/Hindi)
 - **Backend**: FastAPI, SQLAlchemy 2.0, PostgreSQL, JWT auth
 - **AI**: local Ollama (Qwen 2.5) for document field extraction and case-brief generation — deterministic rule engine and score model, not AI, decide compliance
 

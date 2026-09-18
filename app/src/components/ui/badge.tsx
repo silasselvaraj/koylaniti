@@ -1,5 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/client";
+import { caseStatusLabel } from "@/lib/status-labels";
+
+export { caseStatusLabel };
 
 export function Badge({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
@@ -20,8 +26,9 @@ const BAND_STYLE: Record<string, string> = {
 };
 
 export function BandBadge({ band }: { band: string | null }) {
-  if (!band) return <Badge>Unscored</Badge>;
-  return <Badge className={BAND_STYLE[band]}>{band}</Badge>;
+  const { t } = useI18n();
+  if (!band) return <Badge>{t("Unscored")}</Badge>;
+  return <Badge className={BAND_STYLE[band]}>{t(band)}</Badge>;
 }
 
 const SEVERITY_STYLE: Record<string, string> = {
@@ -32,7 +39,8 @@ const SEVERITY_STYLE: Record<string, string> = {
 };
 
 export function SeverityBadge({ severity }: { severity: string }) {
-  return <Badge className={SEVERITY_STYLE[severity] ?? ""}>{severity}</Badge>;
+  const { t } = useI18n();
+  return <Badge className={SEVERITY_STYLE[severity] ?? ""}>{t(severity)}</Badge>;
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -45,19 +53,13 @@ const STATUS_STYLE: Record<string, string> = {
   CLOSED: "bg-[var(--band-green)] text-white border-transparent",
 };
 
-export const CASE_STATUS_LABEL: Record<string, string> = {
-  EVIDENCE_SUBMITTED: "VERIFICATION PENDING",
-};
-
-export function caseStatusLabel(status: string): string {
-  return CASE_STATUS_LABEL[status] ?? status.replace(/_/g, " ");
-}
-
 export function CaseStatusBadge({ status }: { status: string }) {
-  return <Badge className={STATUS_STYLE[status] ?? ""}>{caseStatusLabel(status)}</Badge>;
+  const { t } = useI18n();
+  return <Badge className={STATUS_STYLE[status] ?? ""}>{t(caseStatusLabel(status))}</Badge>;
 }
 
 export function OverdueBadge({ isOverdue }: { isOverdue: boolean }) {
+  const { t } = useI18n();
   if (!isOverdue) return null;
-  return <Badge className="bg-[var(--severity-critical)] text-white border-transparent">OVERDUE</Badge>;
+  return <Badge className="bg-[var(--severity-critical)] text-white border-transparent">{t("OVERDUE")}</Badge>;
 }

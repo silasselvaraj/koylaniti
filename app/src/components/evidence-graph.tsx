@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { AuditLogRow, Case, Finding, Inspection, Rule } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatRuleId } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
 
 const NODES = [
   { id: "eg-rule", label: "Control" },
@@ -18,7 +19,7 @@ function findAuditByTransition(auditRows: AuditLogRow[], from: string, to: strin
   return auditRows.find((a) => a.event_type === "case_transition" && a.detail?.startsWith(`${from}->${to}`));
 }
 
-export function EvidenceGraph({
+export async function EvidenceGraph({
   caseRow,
   linkedFindings,
   ruleById,
@@ -33,6 +34,7 @@ export function EvidenceGraph({
   auditRows: AuditLogRow[];
   userNameById: Record<number, string>;
 }) {
+  const t = await getT();
   const rules = [...new Set(linkedFindings.map((f) => f.rule_id).filter((r): r is string => !!r))].map(
     (id) => ruleById[id]
   );
@@ -44,19 +46,19 @@ export function EvidenceGraph({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Compliance Evidence Graph</CardTitle>
+        <CardTitle>{t("Compliance Evidence Graph")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <nav className="flex flex-wrap gap-2 text-xs">
           {NODES.map((n, i) => (
             <a key={n.id} href={`#${n.id}`} className="rounded bg-surface-inset px-2 py-1 hover:bg-border">
-              {i + 1}. {n.label}
+              {i + 1}. {t(n.label)}
             </a>
           ))}
         </nav>
 
-        <GraphNode id="eg-rule" title="1. Regulation / KoylaNiti Control">
-          {rules.length === 0 && <Empty text="No linked control." />}
+        <GraphNode id="eg-rule" title={t("1. Regulation / KoylaNiti Control")}>
+          {rules.length === 0 && <Empty text={t("No linked control.")} />}
           {rules.map((r) => (
             <div key={r.id} className="text-sm">
               <div className="font-medium">{formatRuleId(r.id)}</div>
@@ -65,59 +67,65 @@ export function EvidenceGraph({
           ))}
         </GraphNode>
 
-        <GraphNode id="eg-evidence" title="2. Evidence / Document">
-          {documentFindings.length === 0 && <Empty text="No document-sourced evidence linked to this case." />}
+        <GraphNode id="eg-evidence" title={t("2. Evidence / Document")}>
+          {documentFindings.length === 0 && <Empty text={t("No document-sourced evidence linked to this case.")} />}
           {documentFindings.map((f) => (
             <div key={f.id} className="text-sm">{f.description}</div>
           ))}
         </GraphNode>
 
-        <GraphNode id="eg-observation" title="3. Field Observation">
-          {inspections.length === 0 && <Empty text="No field inspection submitted yet." />}
+        <GraphNode id="eg-observation" title={t("3. Field Observation")}>
+          {inspections.length === 0 && <Empty text={t("No field inspection submitted yet.")} />}
           {inspections.map((insp) => (
             <div key={insp.id} className="text-sm">
-              {insp.id} &mdash; {insp.submitted_at ? new Date(insp.submitted_at).toLocaleString() : "pending sync"}
+              {insp.id} &mdash; {insp.submitted_at ? new Date(insp.submitted_at).toLocaleString() : t("pending sync")}
               {insp.gps_lat && insp.gps_lng ? ` · GPS ${insp.gps_lat.toFixed(4)}, ${insp.gps_lng.toFixed(4)}` : ""}
             </div>
           ))}
         </GraphNode>
 
-        <GraphNode id="eg-risk" title="4. Risk Score Contribution">
+        <GraphNode id="eg-risk" title={t("4. Risk Score Contribution")}>
           <div className="text-sm">
-            {linkedFindings.length} finding(s) linked, contributing {totalImpact} point(s) of deduction &middot;
-            case severity <b>{caseRow.severity}</b>
+            {t("{count} finding(s) linked, contributing {points} point(s) of deduction", {
+              count: linkedFindings.length,
+              points: totalImpact,
+            })}{" "}
+            &middot; {t("case severity")} <b>{t(caseRow.severity)}</b>
           </div>
         </GraphNode>
 
-        <GraphNode id="eg-action" title="5. Corrective Action">
+        <GraphNode id="eg-action" title={t("5. Corrective Action")}>
           <div className="text-sm">
-            {caseRow.title} ({caseRow.id}) &mdash; status <b>{caseRow.status.replace(/_/g, " ")}</b>
+            {caseRow.title} ({caseRow.id}) &mdash; {t("status")} <b>{t(caseRow.status.replace(/_/g, " "))}</b>
             {caseRow.assigned_to_user_id != null &&
-              ` · assigned to ${userNameById[caseRow.assigned_to_user_id] ?? `user #${caseRow.assigned_to_user_id}`}`}
+              ` · ${t("assigned to")} ${userNameById[caseRow.assigned_to_user_id] ?? `${t("user #")}${caseRow.assigned_to_user_id}`}`}
           </div>
         </GraphNode>
 
-        <GraphNode id="eg-closure" title="6. Closure Evidence">
+        <GraphNode id="eg-closure" title={t("6. Closure Evidence")}>
           {closureAudit ? (
-            <div className="text-sm">{closureAudit.detail?.split(": ").slice(1).join(": ") || "Closed."}</div>
+            <div className="text-sm">{closureAudit.detail?.split(": ").slice(1).join(": ") || t("Closed.")}</div>
           ) : (
-            <Empty text="Not closed yet." />
+            <Empty text={t("Not closed yet.")} />
           )}
         </GraphNode>
 
-        <GraphNode id="eg-verification" title="7. Authorized Verification">
+        <GraphNode id="eg-verification" title={t("7. Authorized Verification")}>
           {verificationAudit ? (
             <div className="text-sm">
-              Verified by {verificationAudit.user_id != null ? userNameById[verificationAudit.user_id] ?? `user #${verificationAudit.user_id}` : "—"} on{" "}
-              {new Date(verificationAudit.created_at).toLocaleString()}
+              {t("Verified by")}{" "}
+              {verificationAudit.user_id != null
+                ? userNameById[verificationAudit.user_id] ?? `${t("user #")}${verificationAudit.user_id}`
+                : "—"}{" "}
+              {t("on")} {new Date(verificationAudit.created_at).toLocaleString()}
             </div>
           ) : (
-            <Empty text="Not verified yet." />
+            <Empty text={t("Not verified yet.")} />
           )}
         </GraphNode>
 
-        <GraphNode id="eg-audit" title="8. Audit Timeline">
-          {auditRows.length === 0 && <Empty text="No audit events yet." />}
+        <GraphNode id="eg-audit" title={t("8. Audit Timeline")}>
+          {auditRows.length === 0 && <Empty text={t("No audit events yet.")} />}
           <ul className="space-y-1 text-sm">
             {auditRows.map((a) => (
               <li key={a.id} className="text-xs text-muted-foreground">
@@ -129,7 +137,7 @@ export function EvidenceGraph({
           </ul>
           {auditRows.length > 0 && (
             <Link href="/gov/audit" className="mt-2 inline-block text-xs text-accent underline">
-              Verify audit chain integrity
+              {t("Verify audit chain integrity")}
             </Link>
           )}
         </GraphNode>

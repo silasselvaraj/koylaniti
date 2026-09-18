@@ -3,6 +3,7 @@ import { getCases, getMe, getMine, getMineCompliance, getMineDocuments, getMineF
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BandBadge, CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
 import { ScoreBar } from "@/components/score-bar";
+import { getT } from "@/lib/i18n/server";
 
 const DOMAIN_LABEL: Record<string, string> = {
   STATUTORY: "Statutory Documents",
@@ -12,9 +13,10 @@ const DOMAIN_LABEL: Record<string, string> = {
 };
 
 export default async function ManagerHome() {
+  const t = await getT();
   const me = await getMe();
   if (!me.mine_id) {
-    return <p className="text-sm text-muted-foreground">No mine is assigned to this account.</p>;
+    return <p className="text-sm text-muted-foreground">{t("No mine is assigned to this account.")}</p>;
   }
   const [mine, compliance, documents, findings, cases] = await Promise.all([
     getMine(me.mine_id),
@@ -38,7 +40,7 @@ export default async function ManagerHome() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="font-mono text-2xl font-semibold">{compliance.overall.toFixed(0)}</div>
-            <div className="text-xs text-muted-foreground">compliance score</div>
+            <div className="text-xs text-muted-foreground">{t("compliance score")}</div>
           </div>
           <BandBadge band={compliance.band} />
         </div>
@@ -46,7 +48,7 @@ export default async function ManagerHome() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Score breakdown</CardTitle>
+          <CardTitle>{t("Score breakdown")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {Object.entries(compliance.domains).map(([domain, d]) => (
@@ -57,10 +59,10 @@ export default async function ManagerHome() {
 
       <Card>
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Open cases</CardTitle>
+          <CardTitle>{t("Open cases")}</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
-          {openCases.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No open cases.</p>}
+          {openCases.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">{t("No open cases.")}</p>}
           {openCases.map((c) => (
             <Link key={c.id} href={`/manager/cases/${c.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-surface-inset">
               <div>
@@ -78,19 +80,19 @@ export default async function ManagerHome() {
 
       <Card>
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Documents</CardTitle>
+          <CardTitle>{t("Documents")}</CardTitle>
           <Link href="/manager/documents" className="text-xs text-accent underline">
-            Upload document
+            {t("Upload document")}
           </Link>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
-          {expiringDocs.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No documents on file.</p>}
+          {expiringDocs.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">{t("No documents on file.")}</p>}
           {documents.map((d) => (
             <div key={d.id} className="flex items-center justify-between gap-4 px-4 py-3">
               <div>
                 <div className="text-sm font-medium">{d.doc_type}</div>
                 <div className="text-xs text-muted-foreground">
-                  {d.extracted_expiry_date ? `Expires ${d.extracted_expiry_date}` : "No expiry extracted"}
+                  {d.extracted_expiry_date ? `${t("Expires ")}${d.extracted_expiry_date}` : t("No expiry extracted")}
                 </div>
               </div>
               <span className="text-xs text-muted-foreground">{d.extraction_status}</span>
@@ -101,7 +103,7 @@ export default async function ManagerHome() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Open findings ({findings.filter((f) => f.status === "OPEN").length})</CardTitle>
+          <CardTitle>{t("Open findings ({count})", { count: findings.filter((f) => f.status === "OPEN").length })}</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
           {findings

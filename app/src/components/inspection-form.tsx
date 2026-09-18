@@ -7,6 +7,7 @@ import { enqueue, readQueue, clearQueue, type QueuedInspection } from "@/lib/off
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n/client";
 import type { Mine } from "@/lib/api";
 
 const CHECKLIST_ITEMS = [
@@ -36,6 +37,7 @@ export function InspectionForm({
   caseId: string | null;
   mines?: Mine[];
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, { passed: boolean; notes: string }>>(
     Object.fromEntries(CHECKLIST_ITEMS.map((i) => [i.item_id, { passed: true, notes: "" }]))
@@ -60,12 +62,12 @@ export function InspectionForm({
   function captureGps() {
     setGpsError(null);
     if (!navigator.geolocation) {
-      setGpsError("Geolocation not supported on this device.");
+      setGpsError(t("Geolocation not supported on this device."));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => setGpsError(err.message || "Could not get location. Enter it manually below."),
+      (err) => setGpsError(err.message || t("Could not get location. Enter it manually below.")),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
@@ -74,7 +76,7 @@ export function InspectionForm({
     e.preventDefault();
     const effectiveMineId = mineId ?? selectedMineId;
     if (!effectiveMineId) {
-      setMessage("Select a mine.");
+      setMessage(t("Select a mine."));
       return;
     }
     setSubmitting(true);
@@ -109,7 +111,7 @@ export function InspectionForm({
     if (offlineMode) {
       enqueue(payload);
       setQueueSize(readQueue().length);
-      setMessage("Saved offline. It will upload once you reconnect and sync.");
+      setMessage(t("Saved offline. It will upload once you reconnect and sync."));
       setSubmitting(false);
       return;
     }
@@ -132,7 +134,7 @@ export function InspectionForm({
     if (result.ok) {
       clearQueue();
       setQueueSize(0);
-      setMessage(`Synced ${queue.length} inspection(s).`);
+      setMessage(t("Synced {count} inspection(s).", { count: queue.length }));
     } else {
       setMessage(result.error);
     }
@@ -144,12 +146,12 @@ export function InspectionForm({
         <CardContent className="flex items-center justify-between py-3">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={offlineMode} onChange={(e) => setOfflineMode(e.target.checked)} />
-            Simulate offline (no network)
+            {t("Simulate offline (no network)")}
           </label>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Pending sync: {queueSize}</span>
+            <span>{t("Pending sync: ")}{queueSize}</span>
             <Button type="button" size="sm" variant="secondary" disabled={queueSize === 0 || submitting} onClick={handleSync}>
-              Reconnect &amp; sync
+              {t("Reconnect & sync")}
             </Button>
           </div>
         </CardContent>
@@ -158,25 +160,25 @@ export function InspectionForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Report details</CardTitle>
+            <CardTitle>{t("Report details")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="report_type">Field report type</Label>
+              <Label htmlFor="report_type">{t("Field report type")}</Label>
               <Select id="report_type" value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                {REPORT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {REPORT_TYPES.map((rt) => (
+                  <option key={rt} value={rt}>
+                    {t(rt)}
                   </option>
                 ))}
               </Select>
             </div>
             {mineId === null && (
               <div className="space-y-1">
-                <Label htmlFor="mine_id">Mine</Label>
+                <Label htmlFor="mine_id">{t("Mine")}</Label>
                 <Select id="mine_id" value={selectedMineId} onChange={(e) => setSelectedMineId(e.target.value)} required>
                   <option value="" disabled>
-                    Select a mine
+                    {t("Select a mine")}
                   </option>
                   {(mines ?? []).map((m) => (
                     <option key={m.id} value={m.id}>
@@ -191,27 +193,27 @@ export function InspectionForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>Checklist</CardTitle>
+            <CardTitle>{t("Checklist")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {CHECKLIST_ITEMS.map((item) => (
               <div key={item.item_id} className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-sm">{t(item.label)}</span>
                   <div className="flex gap-1">
                     <button
                       type="button"
                       onClick={() => setAnswers((a) => ({ ...a, [item.item_id]: { ...a[item.item_id], passed: true } }))}
                       className={`rounded px-3 py-1 text-xs ${answers[item.item_id].passed ? "bg-[var(--band-green)] text-white" : "bg-surface-inset"}`}
                     >
-                      Pass
+                      {t("Pass")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setAnswers((a) => ({ ...a, [item.item_id]: { ...a[item.item_id], passed: false } }))}
                       className={`rounded px-3 py-1 text-xs ${!answers[item.item_id].passed ? "bg-[var(--severity-critical)] text-white" : "bg-surface-inset"}`}
                     >
-                      Fail
+                      {t("Fail")}
                     </button>
                   </div>
                 </div>
@@ -222,22 +224,22 @@ export function InspectionForm({
 
         <Card>
           <CardHeader>
-            <CardTitle>Location &amp; evidence</CardTitle>
+            <CardTitle>{t("Location & evidence")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <Button type="button" variant="secondary" onClick={captureGps}>
-                Capture GPS location
+                {t("Capture GPS location")}
               </Button>
               {gps && <p className="mt-1 text-xs text-muted-foreground">{gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</p>}
               {gpsError && <p className="mt-1 text-xs text-[var(--severity-critical)]">{gpsError}</p>}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="photo">Photo</Label>
+              <Label htmlFor="photo">{t("Photo")}</Label>
               <Input id="photo" type="file" accept="image/*" capture="environment" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{t("Notes")}</Label>
               <Textarea id="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
           </CardContent>
@@ -246,7 +248,7 @@ export function InspectionForm({
         {message && <p className="text-sm">{message}</p>}
 
         <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Submitting..." : offlineMode ? "Save offline" : "Submit inspection"}
+          {submitting ? t("Submitting...") : offlineMode ? t("Save offline") : t("Submit inspection")}
         </Button>
       </form>
     </div>

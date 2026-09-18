@@ -1,3 +1,7 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n/client";
+
 function colorForScore(score: number) {
   if (score >= 80) return "var(--band-green)";
   if (score >= 60) return "var(--band-yellow)";
@@ -5,12 +9,13 @@ function colorForScore(score: number) {
 }
 
 export function ScoreBar({ label, score, weight }: { label: string; score: number; weight: number }) {
+  const { t } = useI18n();
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm mb-1">
-        <span className="font-medium">{label}</span>
+        <span className="font-medium">{t(label)}</span>
         <span className="text-muted-foreground">
-          {score.toFixed(0)}/100 <span className="text-xs">(weight {(weight * 100).toFixed(0)}%)</span>
+          {score.toFixed(0)}/100 <span className="text-xs">({t("weight")} {(weight * 100).toFixed(0)}%)</span>
         </span>
       </div>
       <div className="h-2 rounded-full bg-surface-inset overflow-hidden">

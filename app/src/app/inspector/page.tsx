@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getCases, getMines } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { CaseStatusBadge, SeverityBadge } from "@/components/ui/badge";
+import { getT } from "@/lib/i18n/server";
 
 export default async function InspectorHome() {
+  const t = await getT();
   const [cases, mines] = await Promise.all([getCases(), getMines()]);
   const mineById = new Map(mines.map((m) => [m.id, m]));
   const active = cases.filter((c) => c.status === "ASSIGNED" || c.status === "INSPECTION_REMEDIATION");
@@ -12,18 +14,18 @@ export default async function InspectorHome() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">My assignments</h1>
+        <h1 className="text-lg font-semibold">{t("My assignments")}</h1>
         <Link
           href="/inspector/report/new"
           className="inline-flex h-9 items-center justify-center rounded bg-accent px-3 text-sm font-medium text-accent-foreground hover:bg-accent-strong"
         >
-          File a report
+          {t("File a report")}
         </Link>
       </div>
 
       <Card>
         <CardContent className="divide-y divide-border p-0">
-          {active.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">No assignments waiting on you.</p>}
+          {active.length === 0 && <p className="px-4 py-6 text-sm text-muted-foreground">{t("No assignments waiting on you.")}</p>}
           {active.map((c) => {
             const mine = mineById.get(c.mine_id);
             return (
@@ -45,7 +47,7 @@ export default async function InspectorHome() {
 
       {done.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">Past assignments</h2>
+          <h2 className="mb-2 text-sm font-medium text-muted-foreground">{t("Past assignments")}</h2>
           <Card>
             <CardContent className="divide-y divide-border p-0">
               {done.map((c) => {

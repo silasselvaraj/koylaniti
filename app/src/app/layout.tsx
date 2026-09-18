@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Public_Sans, IBM_Plex_Mono } from "next/font/google";
+import { I18nProvider } from "@/lib/i18n/client";
+import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
 const publicSans = Public_Sans({
@@ -24,16 +26,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#234529",
+  themeColor: "#362418",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale === "hi" ? "hi" : "en"}
       className={`${publicSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans text-[15px]">{children}</body>
+      <body className="min-h-full flex flex-col font-sans text-[15px]">
+        <I18nProvider locale={locale}>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

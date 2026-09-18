@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import Link from "next/link";
 import "leaflet/dist/leaflet.css";
 import type { Mine } from "@/lib/api";
+import { useI18n } from "@/lib/i18n/client";
 
 const BAND_COLOR: Record<string, string> = {
   GREEN: "#2F7A4F",
@@ -12,6 +13,7 @@ const BAND_COLOR: Record<string, string> = {
 };
 
 export function MineMap({ mines }: { mines: Mine[] }) {
+  const { t } = useI18n();
   const center: [number, number] =
     mines.length > 0
       ? [mines.reduce((s, m) => s + m.latitude, 0) / mines.length, mines.reduce((s, m) => s + m.longitude, 0) / mines.length]
@@ -42,10 +44,10 @@ export function MineMap({ mines }: { mines: Mine[] }) {
                 {mine.district}, {mine.state}
               </div>
               <div className="mt-1">
-                Score: {mine.current_score?.toFixed(0) ?? "—"} ({mine.current_band ?? "Unscored"})
+                {t("Score:")} {mine.current_score?.toFixed(0) ?? "—"} ({t(mine.current_band ?? "Unscored")})
               </div>
               <Link href={`/gov/mines/${mine.id}`} className="text-accent underline">
-                View details
+                {t("View details")}
               </Link>
             </div>
           </Popup>

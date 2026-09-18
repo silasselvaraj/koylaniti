@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { apiFetch, ApiError } from "./api";
 import { clearSession, landingPathForRole, setSession, type Role } from "./session";
 
@@ -29,6 +30,11 @@ export async function loginAction(_prevState: unknown, formData: FormData): Prom
 export async function logoutAction() {
   await clearSession();
   redirect("/login");
+}
+
+export async function setLocaleAction(locale: "en" | "hi") {
+  const store = await cookies();
+  store.set("locale", locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
 }
 
 function actionError(e: unknown): ActionResult {

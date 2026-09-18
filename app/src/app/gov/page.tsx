@@ -3,8 +3,10 @@ import { getMines, getComplianceReport, getCases } from "@/lib/api";
 import { MineMapLoader } from "@/components/mine-map-loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BandBadge, CaseStatusBadge, OverdueBadge, SeverityBadge } from "@/components/ui/badge";
+import { getT } from "@/lib/i18n/server";
 
 export default async function GovDashboard() {
+  const t = await getT();
   const [mines, report, openCases] = await Promise.all([
     getMines(),
     getComplianceReport(),
@@ -19,15 +21,15 @@ export default async function GovDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatTile label="Total mines" value={report.total_mines} />
-        <StatTile label="Red mines" value={report.band_counts.RED ?? 0} accent="var(--band-red)" />
-        <StatTile label="Yellow mines" value={report.band_counts.YELLOW ?? 0} accent="var(--band-yellow)" />
-        <StatTile label="Avg. score" value={report.avg_score?.toFixed(0) ?? "—"} />
+        <StatTile label={t("Total mines")} value={report.total_mines} />
+        <StatTile label={t("Red mines")} value={report.band_counts.RED ?? 0} accent="var(--band-red)" />
+        <StatTile label={t("Yellow mines")} value={report.band_counts.YELLOW ?? 0} accent="var(--band-yellow)" />
+        <StatTile label={t("Avg. score")} value={report.avg_score?.toFixed(0) ?? "—"} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Mine locations</CardTitle>
+          <CardTitle>{t("Mine locations")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <MineMapLoader mines={mines} />
@@ -36,14 +38,14 @@ export default async function GovDashboard() {
 
       <Card>
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Cases needing action</CardTitle>
+          <CardTitle>{t("Cases needing action")}</CardTitle>
           <Link href="/gov/cases" className="text-xs text-accent underline">
-            View all cases
+            {t("View all cases")}
           </Link>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
           {actionableCases.length === 0 && (
-            <p className="px-4 py-6 text-sm text-muted-foreground">No cases need action right now.</p>
+            <p className="px-4 py-6 text-sm text-muted-foreground">{t("No cases need action right now.")}</p>
           )}
           {actionableCases.map((c) => {
             const mine = mines.find((m) => m.id === c.mine_id);
@@ -72,7 +74,7 @@ export default async function GovDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All mines</CardTitle>
+          <CardTitle>{t("All mines")}</CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-border p-0">
           {mines.map((m) => (
